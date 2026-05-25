@@ -350,424 +350,380 @@ st.markdown(zhouyi_css, unsafe_allow_html=True)
 # localStorage 恢复必须在任何 UI 渲染之前，否则 st.stop() 会阻止排盘内容
 _ls_init()
 
-pan,booktext,oexample,update,links = st.tabs([' 🧮排盘 ',  ' 🚀占诀 ', ' 📜古占例 ', '🆕日志', ' 🔗连结 '])
+# ============================================================
+# 爻象选项（通俗化文案）
+# ============================================================
+YAO_OPTIONS = {
+    "三枚正面": {"code": "6", "type": "老阴", "symbol": "⚋ ×", "desc": "三枚都是正面，阴爻发动（变爻）"},
+    "两正一反": {"code": "7", "type": "少阳", "symbol": "⚊",   "desc": "两枚正面一枚反面，阳爻不变（静爻）"},
+    "两反一正": {"code": "8", "type": "少阴", "symbol": "⚋",   "desc": "两枚反面一枚正面，阴爻不变（静爻）"},
+    "三枚反面": {"code": "9", "type": "老阳", "symbol": "⚊ ○", "desc": "三枚都是反面，阳爻发动（变爻）"},
+}
 
-with st.sidebar:
-    pp_date=st.date_input("日期",pdlm.now(tz='Asia/Shanghai').date())
-   
 
-    # 设置时间初始值
-    if 'pp_time' not in st.session_state:
-        st.session_state.pp_time = pdlm.now(tz='Asia/Shanghai').time()
-
-# 使用储存的时间初始值
-    pp_time = st.time_input("时间", value=st.session_state.pp_time)
-    st.session_state.pp_time = pp_time
-    p = str(pp_date).split("-")
-    pp = str(pp_time).split(":")
-    y = int(p[0])
-    m = int(p[1])
-    d = int(p[2])
-    h = int(pp[0])
-    min = int(pp[1])
-    st.write("")
-    st.write("手动起爻︰(初爻由下而上)")
-
-    # 正反爻定义说明
-    st.markdown("**📖 正反爻定义**")
-    st.markdown("""
-    <div style="background-color: #F0F8FF; padding: 10px; border-radius: 5px; border-left: 4px solid #45B7D1; margin-bottom: 15px;">
-    <strong>正爻</strong>：铜钱有汉字（或数字）的一面朝上<br>
-    <strong>反爻</strong>：铜钱无字（或硬币菊花、国徽图案）的一面朝上
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 创建爻的显示映射（带颜色和正反数量）
-    yao_options = {
-        "老阴 (3正0反)": {
-            "symbol": "⚋ ×",
-            "color": "#FF6B6B",
-            "description": "3枚铜钱正面朝上"
-        },
-        "少阴 (1正2反)": {
-            "symbol": "⚋",
-            "color": "#4ECDC4",
-            "description": "1枚铜钱正面朝上，2枚反面朝上"
-        },
-        "少阳 (2正1反)": {
-            "symbol": "⚊",
-            "color": "#45B7D1",
-            "description": "2枚铜钱正面朝上，1枚反面朝上"
-        },
-        "老阳 (0正3反)": {
-            "symbol": "⚊ ○",
-            "color": "#FFA07A",
-            "description": "3枚铜钱反面朝上"
-        }
-    }
-
-    def render_manual_yao_row(label: str, key: str) -> str:
-        """渲染单行手动爻选择，直接使用原生 label 避免嵌套列。"""
-        return st.selectbox(
-            label=label,
-            options=list(yao_options.keys()),
-            key=key,
-            format_func=lambda x: f"{yao_options[x]['symbol']}  {x}"
-        )
-
-    option_sixth = render_manual_yao_row('上爻', 'option_sixth')
-    option_fifth = render_manual_yao_row('五爻', 'option_fifth')
-    option_forth = render_manual_yao_row('四爻', 'option_forth')
-    option_third = render_manual_yao_row('三爻', 'option_third')
-    option_second = render_manual_yao_row('二爻', 'option_second')
-    option_first = render_manual_yao_row('初爻', 'option_first')
-    # 从选择中提取爻象类型
-    def extract_yao_type(choice_key: str) -> str:
-        """从选择键中提取爻象类型"""
-        if "老阴" in choice_key:
-            return "老阴"
-        elif "少阴" in choice_key:
-            return "少阴"
-        elif "少阳" in choice_key:
-            return "少阳"
-        elif "老阳" in choice_key:
-            return "老阳"
-        else:
-            return "少阴"  # 默认值
-
-    yaodict = {"老阴": "6", '少阳':"7", "老阳": "9", '少阴':"8" }
-    combine = "".join([yaodict.get(extract_yao_type(i), "") for i in [option_first, option_second,option_third,option_forth,option_fifth,option_sixth]])
-    manual = st.button('🎯 手动排盘')
-
-    # 摇卦方法说明
-    st.markdown("---")
-    st.markdown("**🎲 摇卦方法详解**")
-
-    with st.expander("📖 如何正确摇卦？", expanded=False):
-        st.markdown("""
-        ### 准备工具
-        - **6枚铜钱**（或硬币，一面有字/数字，一面无字/图案）
-        - **安静的环境**和专注的心态
-
-        ### 摇卦步骤
-        1. **静心凝神**：手握6枚铜钱，心中默念所问之事
-        2. **第一次摇卦**（对应**初爻**）：抛出铜钱，统计正面数量
-        3. **继续摇卦**：依次完成第二、三、四、五、六次摇卦
-        4. **记录结果**：根据每次摇卦的正面数量确定爻象
-
-        ### 爻象判定规则
-        | 正面数量 | 反面数量 | 爻象 | 符号 | 含义 |
-        |---------|---------|------|------|------|
-        | 3枚 | 0枚 | 老阴 | ⚋ × | 阴中之阴，可能变阳 |
-        | 2枚 | 1枚 | 少阳 | ⚊ | 阳爻，静而不变 |
-        | 1枚 | 2枚 | 少阴 | ⚋ | 阴爻，静而不变 |
-        | 0枚 | 3枚 | 老阳 | ⚊ ○ | 阳中之阳，可能变阴 |
-
-        ### 📌 重要提示
-        - **初爻**（第一次摇卦）对应最下面的爻
-        - **上爻**（第六次摇卦）对应最上面的爻
-        - 老阴、老阳为"动爻"，代表可能的变化
-        - 少阴、少阳为"静爻"，代表稳定状态
-        """)
-
-    # AI设置区域
-    st.write("---")
-
-    # 初始化AI模块
+# ============================================================
+# 状态初始化
+# ============================================================
+def init_state():
+    if "page" not in st.session_state:
+        st.session_state.page = "home"
     if "ai_module" not in st.session_state:
         st.session_state.ai_module = AIInterpretationModule()
-
     if "ai_settings" not in st.session_state:
         st.session_state.ai_settings = st.session_state.ai_module.load_settings()
+    if "ai_reading" not in st.session_state:
+        st.session_state.ai_reading = ""
+    if "cast_data" not in st.session_state:
+        st.session_state.cast_data = None
+    if "pp_time" not in st.session_state:
+        st.session_state.pp_time = pdlm.now(tz="Asia/Shanghai").time()
+
+
+# ============================================================
+# 排盘生成
+# ============================================================
+def generate_pan_result(y, m, d, h, minute, yao_code):
+    return ichingshifa.Iching().display_pan_m(y, m, d, h, minute, yao_code)
+
+
+# ============================================================
+# 重置摇卦
+# ============================================================
+def reset_cast():
+    st.session_state.cast_data = None
+    st.session_state.ai_reading = ""
+    st.session_state.page = "home"
+    st.rerun()
+
+
+# ============================================================
+# 爻选择器
+# ============================================================
+def render_yao_selector():
+    st.subheader("记录六次摇卦结果")
+    st.caption("从第一次（初爻）开始，依次向上填写到第六次（上爻）。")
+
+    keys = [
+        ("第一次（初爻）", "yao_1"),
+        ("第二次（二爻）", "yao_2"),
+        ("第三次（三爻）", "yao_3"),
+        ("第四次（四爻）", "yao_4"),
+        ("第五次（五爻）", "yao_5"),
+        ("第六次（上爻）", "yao_6"),
+    ]
+
+    values = []
+    for label, key in keys:
+        choice = st.selectbox(
+            label,
+            options=list(YAO_OPTIONS.keys()),
+            key=key,
+            format_func=lambda name: f"{YAO_OPTIONS[name]['symbol']}  {name} — {YAO_OPTIONS[name]['desc']}",
+        )
+        values.append(choice)
+
+    return "".join(YAO_OPTIONS[name]["code"] for name in values)
+
+
+# ============================================================
+# 首页：摇卦界面
+# ============================================================
+def render_home_page():
+    st.title("坚六爻")
+
+    # 日期时间选择
+    col_date, col_time = st.columns(2)
+    with col_date:
+        pp_date = st.date_input("排盘日期", pdlm.now(tz="Asia/Shanghai").date())
+    with col_time:
+        pp_time = st.time_input("排盘时间", value=st.session_state.pp_time)
+        st.session_state.pp_time = pp_time
+
+    st.markdown("---")
+
+    # 爻选择
+    yao_code = render_yao_selector()
+
+    # 摇卦说明
+    with st.expander("如何摇卦？", expanded=False):
+        st.markdown("""
+        **准备工具**：3枚硬币（一面有字/数字为正面，一面无字/图案为反面）
+
+        **步骤**：
+        1. 静心凝神，手握3枚硬币，心中默念所问之事
+        2. 抛掷硬币，统计正面和反面数量
+        3. 重复6次，从初爻到上爻依次记录结果
+
+        | 结果 | 通俗叫法 | 含义 |
+        |------|---------|------|
+        | 三枚全是正面 | 三枚正面 | 阴爻发动（变爻） |
+        | 两枚正一枚反 | 两正一反 | 阳爻不变（静爻） |
+        | 两枚反一枚正 | 两反一正 | 阴爻不变（静爻） |
+        | 三枚全是反面 | 三枚反面 | 阳爻发动（变爻） |
+        """)
+
+    st.markdown("---")
+
+    # 问题输入
+    question = st.text_area(
+        "所问何事",
+        key="question",
+        placeholder="例如：近期事业发展如何？这次合作是否顺利？",
+        height=100,
+    )
+
+    # 排盘按钮
+    if st.button("生成排盘", type="primary", use_container_width=True):
+        y, mo, d = pp_date.year, pp_date.month, pp_date.day
+        h, minute = pp_time.hour, pp_time.minute
+        pan_result = generate_pan_result(y, mo, d, h, minute, yao_code)
+        st.session_state.cast_data = {
+            "date": str(pp_date),
+            "time": str(pp_time),
+            "yao_code": yao_code,
+            "question": question.strip(),
+            "pan_result": str(pan_result),
+        }
+        st.session_state.ai_reading = ""
+        st.session_state.page = "result"
+        st.rerun()
+
+
+# ============================================================
+# AI 解读 Tab 内容
+# ============================================================
+def render_ai_tab(pan_result: str):
+    question = st.session_state.get("cast_data", {}).get("question", "")
+
+    question_input = st.text_area(
+        "所问何事",
+        value=question,
+        key="result_question",
+        height=100,
+    )
+
+    col_gen, col_cfg = st.columns([3, 1])
+    with col_gen:
+        generate = st.button("生成AI解读", type="primary", use_container_width=True)
+    with col_cfg:
+        if st.button("AI配置", use_container_width=True):
+            st.session_state.previous_page = "result"
+            st.session_state.page = "ai_settings"
+            st.rerun()
+
+    if generate:
+        settings = st.session_state.get("ai_settings", {})
+        if not settings.get("api_key", "").strip():
+            st.error("请先配置 API Key（点击上方 AI配置 按钮）")
+            return
+        if not question_input.strip():
+            st.warning("请输入所问之事")
+            return
+        with st.spinner("AI正在解读中..."):
+            try:
+                st.session_state.ai_reading = st.session_state.ai_module.call_llm_api(
+                    question=question_input.strip(),
+                    pan_result=pan_result,
+                    settings=settings,
+                )
+                st.success("解读完成")
+            except ValueError as ve:
+                st.error(f"{ve}")
+            except Exception as e:
+                st.error(f"AI解读失败: {e}")
+
+    if st.session_state.get("ai_reading"):
+        st.markdown("---")
+        st.markdown(st.session_state.ai_reading)
+
+        col_copy, col_download = st.columns(2)
+        with col_copy:
+            if st.button("复制结果", key="copy_result", use_container_width=True):
+                st.code(st.session_state.ai_reading, language="text")
+        with col_download:
+            st.download_button(
+                label="下载解读",
+                data=st.session_state.ai_reading,
+                file_name=f"周易解读_{pdlm.now(tz='Asia/Shanghai').format('YYYY-MM-DD_HH-mm-ss')}.txt",
+                mime="text/plain",
+                use_container_width=True,
+            )
+    else:
+        st.info("输入问题后点击上方按钮生成 AI 解读")
+
+
+# ============================================================
+# 结果页：排盘 + Tab
+# ============================================================
+def render_result_page():
+    cast_data = st.session_state.get("cast_data")
+    if not cast_data:
+        reset_cast()
+        return
+
+    # 顶部导航
+    col_title, col_back, col_cfg = st.columns([2, 1, 1])
+    with col_title:
+        st.title("排盘结果")
+    with col_back:
+        if st.button("重新摇卦", use_container_width=True):
+            reset_cast()
+    with col_cfg:
+        if st.button("AI配置", use_container_width=True):
+            st.session_state.previous_page = "result"
+            st.session_state.page = "ai_settings"
+            st.rerun()
+
+    pan_tab, ai_tab, book_tab, example_tab, log_tab = st.tabs(
+        ["排盘", "AI解读", "占诀", "古占例", "日志"]
+    )
+
+    with pan_tab:
+        st.code(cast_data["pan_result"])
+
+    with ai_tab:
+        render_ai_tab(cast_data["pan_result"])
+
+    with book_tab:
+        st.markdown(get_file_content_as_string("text.md"))
+
+    with example_tab:
+        st.markdown(get_file_content_as_string("example.md"))
+
+    with log_tab:
+        st.markdown(get_file_content_as_string("update.md"))
+
+
+# ============================================================
+# AI 配置页
+# ============================================================
+def render_ai_settings_page():
+    st.title("AI 配置")
 
     ai_module = st.session_state.ai_module
     current_settings = st.session_state.ai_settings
 
-    with st.expander("🤖 AI解读设置", expanded=False):
-        st.markdown("##### 🔧 基本配置")
-        new_base_url = st.text_input(
-            "Base URL",
-            value=current_settings.get("base_url", ""),
-            placeholder="自定义API地址（可选）",
-            help="留空使用OpenAI默认地址"
-        )
+    new_base_url = st.text_input(
+        "Base URL",
+        value=current_settings.get("base_url", ""),
+        placeholder="自定义API地址（可选，留空使用OpenAI默认）",
+    )
 
-        new_model = st.text_input(
-            "模型名称",
-            value=current_settings.get("model", "gpt-3.5-turbo"),
-            placeholder="如: gpt-3.5-turbo"
-        )
+    new_model = st.text_input(
+        "模型名称",
+        value=current_settings.get("model", "gpt-3.5-turbo"),
+    )
 
-        st.write("")  # 添加垂直间距
+    new_api_key = st.text_input(
+        "API Key",
+        value=current_settings.get("api_key", ""),
+        type="password",
+        placeholder="请输入API密钥",
+    )
 
-        new_api_key = st.text_input(
-            "API Key",
-            value=current_settings.get("api_key", ""),
-            type="password",
-            placeholder="请输入API密钥",
-            help="支持OpenAI兼容接口"
-        )
+    new_temperature = st.slider(
+        "创造性（温度）",
+        min_value=0.0,
+        max_value=1.0,
+        value=float(current_settings.get("temperature", 0.7)),
+        step=0.1,
+    )
 
-        new_temperature = st.slider(
-            "创造性 (温度)",
-            min_value=0.0,
-            max_value=1.0,
-            value=float(current_settings.get("temperature", 0.7)),
-            step=0.1,
-            help="数值越高回答越有创造性"
-        )
+    st.markdown("---")
+    new_system_prompt = st.text_area(
+        "系统提示词",
+        value=current_settings.get("system_prompt", ""),
+        height=200,
+    )
 
-        st.markdown("---")
-        st.markdown("##### ✏️ 提示词配置")
-        new_system_prompt = st.text_area(
-            "系统提示词",
-            value=current_settings.get("system_prompt", ""),
-            height=200,
-            help="AI助手的角色设定和专业背景"
-        )
+    new_user_prompt = st.text_area(
+        "用户提示词模板",
+        value=current_settings.get("user_prompt_template", ""),
+        height=300,
+        help="使用 {pan_result} 和 {question} 作为占位符",
+    )
 
-        new_user_prompt = st.text_area(
-            "用户提示词模板",
-            value=current_settings.get("user_prompt_template", ""),
-            height=300,
-            help="使用{pan_result}和{question}作为占位符"
-        )
-
-        st.markdown("---")
-        st.markdown("##### ⚙️ 高级配置")
-        new_max_tokens = st.number_input(
+    st.markdown("---")
+    col_opt1, col_opt2, col_opt3 = st.columns(3)
+    with col_opt1:
+        new_max_tokens_val = st.number_input(
             "最大Token数",
-            value=current_settings.get("max_tokens", None),
-            min_value=None,
-            max_value=None,
-            help="留空表示不限制"
+            value=current_settings.get("max_tokens") or 0,
+            min_value=0,
+            help="0表示不限制",
         )
-
+    with col_opt2:
         new_timeout = st.number_input(
             "请求超时（秒）",
             value=float(current_settings.get("timeout", 60.0)),
             min_value=1.0,
             max_value=300.0,
-            step=1.0
         )
-
+    with col_opt3:
         new_max_retries = st.number_input(
             "最大重试次数",
             value=int(current_settings.get("max_retries", 3)),
             min_value=0,
             max_value=10,
-            step=1
         )
 
-        # 操作按钮
-        col_save, col_reset, col_export = st.columns(3)
-        with col_save:
-            if st.button("💾 保存配置", use_container_width=True):
-                new_settings = {
-                    "base_url": str(new_base_url).strip(),
-                    "api_key": str(new_api_key).strip(),
-                    "model": str(new_model).strip() or "gpt-3.5-turbo",
-                    "temperature": new_temperature,
-                    "system_prompt": str(new_system_prompt).strip(),
-                    "user_prompt_template": str(new_user_prompt).strip(),
-                    "max_tokens": new_max_tokens if new_max_tokens else None,
-                    "timeout": new_timeout,
-                    "max_retries": new_max_retries
-                }
-                if ai_module.save_settings(new_settings):
-                    st.session_state.ai_settings = new_settings
-                    _ls_save(new_settings)
-                    st.success("AI配置已保存到浏览器")
-                    st.rerun()
-                else:
-                    st.error("配置保存失败")
-
-        with col_reset:
-            if st.button("🔄 重置默认", use_container_width=True):
-                if ai_module.save_settings(ai_module.default_settings):
-                    st.session_state.ai_settings = ai_module.default_settings.copy()
-                    _ls_save(ai_module.default_settings)
-                    st.success("已重置为默认配置")
-                    st.rerun()
-                else:
-                    st.error("重置失败")
-
-        with col_export:
-            if st.button("📋 导出配置", use_container_width=True):
-                config_text = json.dumps(current_settings, ensure_ascii=False, indent=2)
-                st.code(config_text)
-                st.info("配置已显示，您可以手动复制")
-
-        # 显示当前配置状态
-        current_api_key = current_settings.get("api_key", "").strip()
-        if current_api_key:
-            st.success("✅ API Key已配置")
-        else:
-            st.warning("⚠️ 请配置API Key以使用AI解读功能")
-
-with links:
-    st.header('连接')
-    st.markdown(get_file_content_as_string1("update.md"), unsafe_allow_html=True)
-
-with update:
-    st.header('日志')
-    st.markdown(get_file_content_as_string("update.md"))
-
-with booktext:
-    st.header('占诀')
-    st.markdown(get_file_content_as_string("text.md"))
- 
-with oexample:
-    st.header('古占例')
-    st.markdown(get_file_content_as_string("example.md"))
-
-with pan:
-    st.header('坚六爻')
-
-    # 创建两列布局：左列排盘，右列AI解读
-    col_left, col_right = st.columns([2, 1])
-
-    # 初始化session state
-    if "latest_pan_result" not in st.session_state:
-        st.session_state.latest_pan_result = ""
-    if "ai_reading" not in st.session_state:
-        st.session_state.ai_reading = ""
-    if "current_yao_list" not in st.session_state:
-        st.session_state.current_yao_list = []
-
-    # 左列：排盘显示
-    with col_left:
-        st.subheader("📊 排盘结果")
-
-        # 生成排盘结果
-        try:
-            pan_result_obj = ichingshifa.Iching().display_pan(y,m,d,h,min)
-            qigua_result = ichingshifa.Iching().qigua_time(y,m,d,h,min)
-            dayan_method = qigua_result.get("大衍筮法", [])
-            combine1 = dayan_method[0] if dayan_method else "777777"  # 默认值
-            pan_m_result = ichingshifa.Iching().display_pan_m(y,m,d,h,min,combine1)
-
-            # 获取当前爻列表
-            if manual:
-                yao_list = [extract_yao_type(option) for option in [option_first, option_second, option_third, option_forth, option_fifth, option_sixth]]
+    col_save, col_reset, col_back = st.columns(3)
+    with col_save:
+        if st.button("保存配置", type="primary", use_container_width=True):
+            new_settings = {
+                "base_url": str(new_base_url).strip(),
+                "api_key": str(new_api_key).strip(),
+                "model": str(new_model).strip() or "gpt-3.5-turbo",
+                "temperature": new_temperature,
+                "system_prompt": str(new_system_prompt).strip(),
+                "user_prompt_template": str(new_user_prompt).strip(),
+                "max_tokens": new_max_tokens_val if new_max_tokens_val else None,
+                "timeout": new_timeout,
+                "max_retries": new_max_retries,
+            }
+            if ai_module.save_settings(new_settings):
+                st.session_state.ai_settings = new_settings
+                _ls_save(new_settings)
+                st.success("AI配置已保存到浏览器")
+                st.rerun()
             else:
-                yao_numbers = list(combine1)
-                yaodict_reverse = {"6": "老阴", "8": "少阴", "7": "少阳", "9": "老阳"}
-                yao_list = [yaodict_reverse.get(num, "少阴") for num in yao_numbers]
+                st.error("配置保存失败")
 
-            st.session_state.current_yao_list = yao_list
-
-            # 确定显示内容
-            display_result = pan_result_obj
-            if manual:
-                try:
-                    display_result = pan_m_result
-                except (ValueError, UnboundLocalError):
-                    pass
-
-            # 保存排盘结果供 AI 使用
-            st.session_state.latest_pan_result = str(display_result)
-
-            # 直接显示
-            st.code(display_result)
-
-        except Exception as e:
-            st.error(f"排盘生成失败: {e}")
-            st.session_state.latest_pan_result = ""
-            st.session_state.current_yao_list = []
-
-    # 右列：AI解读
-    with col_right:
-        st.subheader("🤖 AI解读")
-
-        # 上方区域：问题输入
-        st.markdown("##### 所问何事？")
-        user_question = st.text_area(
-            "请输入您要询问的问题",
-            key="user_question",
-            placeholder="例如：事业发展如何？感情走向怎样？",
-            height=100,
-            help="请详细描述您的问题，以便AI给出更精准的解读"
-        )
-
-        # 生成解读按钮
-        generate_button = st.button(
-            "🔮 生成AI解读",
-            use_container_width=True,
-            type="primary"
-        )
-
-        st.markdown("---")
-
-        # 下方区域：解读结果显示
-        st.markdown("##### LLM解读内容")
-        ai_result_container = st.container()
-
-        # 生成解读的逻辑
-        if generate_button:
-            # 验证输入
-            if not st.session_state.latest_pan_result.strip():
-                st.warning("请先生成排盘结果")
-            elif not user_question.strip():
-                st.warning("请输入您要询问的问题")
+    with col_reset:
+        if st.button("重置默认", use_container_width=True):
+            if ai_module.save_settings(ai_module.default_settings):
+                st.session_state.ai_settings = ai_module.default_settings.copy()
+                _ls_save(ai_module.default_settings)
+                st.success("已重置为默认配置")
+                st.rerun()
             else:
-                # 检查API配置
-                current_settings = st.session_state.get("ai_settings", {})
-                if not current_settings.get("api_key", "").strip():
-                    st.error("请先在侧边栏配置API Key")
-                else:
-                    # 显示加载状态
-                    with st.spinner("🤖 AI正在解读中，请稍候..."):
-                        try:
-                            # 使用AI模块调用API
-                            ai_response = ai_module.call_llm_api(
-                                question=user_question.strip(),
-                                pan_result=st.session_state.latest_pan_result,
-                                settings=current_settings
-                            )
+                st.error("重置失败")
 
-                            # 保存解读结果
-                            st.session_state.ai_reading = ai_response
-                            st.success("✨ 解读完成！")
+    with col_back:
+        if st.button("返回", use_container_width=True):
+            st.session_state.page = st.session_state.get("previous_page", "home")
+            st.rerun()
 
-                        except ValueError as ve:
-                            st.error(f"⚠️ {ve}")
-                        except Exception as e:
-                            st.error(f"❌ AI解读失败: {e}")
+    current_api_key = current_settings.get("api_key", "").strip()
+    if current_api_key:
+        st.success("API Key 已配置")
+    else:
+        st.warning("请配置 API Key 以使用 AI 解读功能")
 
-        # 显示解读结果
-        with ai_result_container:
-            if st.session_state.ai_reading:
-                # 使用markdown显示格式化的解读结果
-                st.markdown(st.session_state.ai_reading)
 
-                # 添加操作按钮
-                col_copy, col_download, col_refresh = st.columns(3)
-                with col_copy:
-                    if st.button("📋 复制到剪贴板", key="copy_result", use_container_width=True):
-                        st.code(st.session_state.ai_reading, language="text")
-                        st.info("解读结果已显示在上方代码框中，您可以点击复制按钮复制内容")
+# ============================================================
+# 主路由
+# ============================================================
+init_state()
 
-                with col_download:
-                    # 提供下载功能
-                    st.download_button(
-                        label="💾 下载解读",
-                        data=st.session_state.ai_reading,
-                        file_name=f"周易解读_{pdlm.now(tz='Asia/Shanghai').format('YYYY-MM-DD_HH-mm-ss')}.txt",
-                        mime="text/plain",
-                        use_container_width=True
-                    )
-
-                with col_refresh:
-                    if st.button("🔄 重新解读", key="refresh_result", use_container_width=True):
-                        st.session_state.ai_reading = ""
-                        st.rerun()
-            else:
-                st.info("💡 请先完成排盘并输入问题，然后点击'生成AI解读'")
-
-        # 显示提示词信息（调试用）
-        if st.checkbox("🔧 显示调试信息"):
-            with st.expander("当前配置"):
-                st.json(current_settings)
+if st.session_state.page == "home":
+    render_home_page()
+elif st.session_state.page == "result":
+    render_result_page()
+elif st.session_state.page == "ai_settings":
+    render_ai_settings_page()
+else:
+    st.session_state.page = "home"
+    st.rerun()
 
 
