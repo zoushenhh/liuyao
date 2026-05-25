@@ -77,10 +77,12 @@ def get_file_content_as_string1(path):
 
 st.set_page_config(layout="wide",page_title="坚六爻-周易排盘")
 
-# 注入中国周易风格的CSS样式
+# 注入中国周易风格的CSS样式（含移动端适配）
 zhouyi_css = """
 <style>
-/* 全局背景 - 宣纸色 */
+/* ============================================
+   1. 全局背景与基础 - 宣纸色
+   ============================================ */
 .main .block-container {
     background-color: #F7F3E8;
     color: #2B2B2B;
@@ -89,49 +91,56 @@ zhouyi_css = """
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-/* 侧边栏样式 */
-.css-1d391kg {
+h1, h2, h3, h4, h5, h6 {
+    color: #2B2B2B;
+    font-family: 'SimSun', '宋体', serif;
+    font-weight: bold;
+}
+
+/* ============================================
+   2. 侧边栏样式（data-testid 替代过时 hash class）
+   ============================================ */
+[data-testid="stSidebar"] {
     background: linear-gradient(135deg, #EFEBE2 0%, #E8DDD0 100%);
     border-right: 3px solid #D4AF37;
-    padding: 20px;
 }
 
-.css-1d391kg .stSelectbox > div > div {
+[data-testid="stSidebar"] .stSelectbox > div > div,
+[data-testid="stSidebar"] .stTextInput > div > div > input,
+[data-testid="stSidebar"] .stNumberInput > div > div > input {
     background-color: #FFFFFF;
     border: 2px solid #D4AF37;
     border-radius: 4px;
     color: #2B2B2B;
 }
 
-.css-1d391kg .stTextInput > div > div > input,
-.css-1d391kg .stNumberInput > div > div > input {
-    background-color: #FFFFFF;
-    border: 2px solid #D4AF37;
-    border-radius: 4px;
-    color: #2B2B2B;
-    padding: 8px 12px;
-}
-
-/* 主输入框样式 */
+/* ============================================
+   3. 输入组件通用样式 + 触摸优化 (min-height: 44px)
+   ============================================ */
 .stTextInput > div > div > input,
 .stTextArea > div > div > textarea,
-.stSelectbox > div > div {
+.stSelectbox > div > div,
+.stNumberInput > div > div > input {
     background-color: #FFFFFF;
     border: 2px solid #D4AF37;
     border-radius: 6px;
     color: #2B2B2B;
     font-family: 'SimSun', '宋体', serif;
     transition: all 0.3s ease;
+    min-height: 44px;
 }
 
 .stTextInput > div > div > input:focus,
 .stTextArea > div > div > textarea:focus,
-.stSelectbox > div > div:focus-within {
+.stSelectbox > div > div:focus-within,
+.stNumberInput > div > div > input:focus {
     border-color: #9E2A2B;
     box-shadow: 0 0 0 2px rgba(158, 42, 43, 0.2);
 }
 
-/* 按钮样式 - 朱砂红 */
+/* ============================================
+   4. 按钮样式 - 朱砂红 + 触摸优化
+   ============================================ */
 .stButton > button {
     background: linear-gradient(135deg, #9E2A2B 0%, #B83640 100%);
     color: #FFFFFF;
@@ -142,6 +151,7 @@ zhouyi_css = """
     font-family: 'SimSun', '宋体', serif;
     transition: all 0.3s ease;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    min-height: 44px;
 }
 
 .stButton > button:hover {
@@ -150,7 +160,6 @@ zhouyi_css = """
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
-/* 主按钮（primary）样式 - 琉璃金 */
 .stButton > button[kind="primary"] {
     background: linear-gradient(135deg, #D4AF37 0%, #F4E4C1 100%);
     color: #2B2B2B;
@@ -163,7 +172,9 @@ zhouyi_css = """
     box-shadow: 0 4px 10px rgba(212, 175, 55, 0.6);
 }
 
-/* Tab标签页样式 */
+/* ============================================
+   5. Tab 标签页样式
+   ============================================ */
 .stTabs [data-baseweb="tab-list"] {
     background-color: #EFEBE2;
     border-radius: 8px;
@@ -179,6 +190,7 @@ zhouyi_css = """
     font-weight: bold;
     font-family: 'SimSun', '宋体', serif;
     transition: all 0.3s ease;
+    min-height: 44px;
 }
 
 .stTabs [aria-selected="true"] {
@@ -187,82 +199,42 @@ zhouyi_css = """
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-/* Expander样式 */
-.streamlit-expanderHeader {
+/* ============================================
+   6. Expander 样式（data-testid 替代过时 class）
+   ============================================ */
+[data-testid="stExpander"] details summary {
     background-color: #EFEBE2;
     border-radius: 6px;
     border: 1px solid #D4AF37;
     font-family: 'SimSun', '宋体', serif;
     font-weight: bold;
+    min-height: 44px;
 }
 
-.streamlit-expanderContent {
+[data-testid="stExpander"] details[open] summary {
+    border-radius: 6px 6px 0 0;
+}
+
+[data-testid="stExpander"] details > div {
     background-color: #FFFFFF;
     border-radius: 0 0 6px 6px;
     border: 1px solid #D4AF37;
     border-top: none;
+    padding: 1rem;
 }
 
-/* 滑块样式 */
+/* ============================================
+   7. 其他 UI 组件
+   ============================================ */
 .stSlider > div > div > div {
     background: linear-gradient(90deg, #D4AF37 0%, #9E2A2B 100%);
 }
 
-/* 标题样式 */
-h1, h2, h3, h4, h5, h6 {
-    color: #2B2B2B;
-    font-family: 'SimSun', '宋体', serif;
-    font-weight: bold;
-}
+.stSuccess { background-color: #E8F5E8; border-left: 4px solid #4CAF50; color: #2B2B2B; }
+.stWarning { background-color: #FFF3E0; border-left: 4px solid #D4AF37; color: #2B2B2B; }
+.stError   { background-color: #FFEBEE; border-left: 4px solid #9E2A2B; color: #2B2B2B; }
+.stInfo    { background-color: #E3F2FD; border-left: 4px solid #45B7D1; color: #2B2B2B; }
 
-/* 侧边栏宽度自适应 */
-@media (max-width: 768px) {
-    .css-1d391kg {
-        min-width: 280px !important;
-        max-width: 320px !important;
-    }
-}
-
-@media (min-width: 769px) and (max-width: 1024px) {
-    .css-1d391kg {
-        min-width: 300px !important;
-        max-width: 360px !important;
-    }
-}
-
-@media (min-width: 1025px) {
-    .css-1d391kg {
-        min-width: 320px !important;
-        max-width: 400px !important;
-    }
-}
-
-/* 成功/警告/错误消息样式 */
-.stSuccess {
-    background-color: #E8F5E8;
-    border-left: 4px solid #4CAF50;
-    color: #2B2B2B;
-}
-
-.stWarning {
-    background-color: #FFF3E0;
-    border-left: 4px solid #D4AF37;
-    color: #2B2B2B;
-}
-
-.stError {
-    background-color: #FFEBEE;
-    border-left: 4px solid #9E2A2B;
-    color: #2B2B2B;
-}
-
-.stInfo {
-    background-color: #E3F2FD;
-    border-left: 4px solid #45B7D1;
-    color: #2B2B2B;
-}
-
-/* 代码块样式 */
 .stCode {
     background-color: #F5F5F5;
     border: 1px solid #D4AF37;
@@ -270,12 +242,105 @@ h1, h2, h3, h4, h5, h6 {
     font-family: 'Consolas', monospace;
 }
 
-/* 分割线样式 */
 hr {
     border: none;
     height: 2px;
     background: linear-gradient(90deg, transparent, #D4AF37, transparent);
     margin: 20px 0;
+}
+
+/* ============================================
+   8. 响应式断点 - 手机竖屏 (<=480px)
+   ============================================ */
+@media (max-width: 480px) {
+    /* 多列布局强制堆叠 */
+    [data-testid="stHorizontalBlock"] {
+        flex-direction: column !important;
+    }
+
+    [data-testid="stHorizontalBlock"] > div {
+        width: 100% !important;
+        min-width: 100% !important;
+        margin-bottom: 12px;
+    }
+
+    /* Tab 横向滚动 */
+    .stTabs [data-baseweb="tab-list"] {
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        display: flex;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+    }
+
+    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar-thumb {
+        background-color: #D4AF37;
+        border-radius: 4px;
+    }
+
+    /* 按钮全宽 */
+    .stButton > button {
+        width: 100% !important;
+    }
+
+    /* 排盘代码块缩小字号 + 横向滚动 */
+    .stCode code, .stCode pre {
+        font-size: 11px !important;
+        white-space: pre !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* 减小主区域两侧留白 */
+    .main .block-container {
+        padding: 10px;
+    }
+}
+
+/* ============================================
+   9. 响应式断点 - 平板/手机横屏 (481-768px)
+   ============================================ */
+@media (min-width: 481px) and (max-width: 768px) {
+    [data-testid="stSidebar"] {
+        min-width: 280px !important;
+        max-width: 320px !important;
+    }
+
+    [data-testid="stHorizontalBlock"] {
+        flex-direction: column !important;
+    }
+
+    [data-testid="stHorizontalBlock"] > div {
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+
+    .stCode code, .stCode pre {
+        font-size: 13px !important;
+    }
+}
+
+/* ============================================
+   10. 响应式断点 - 桌面端 (>=769px)
+   ============================================ */
+@media (min-width: 769px) and (max-width: 1024px) {
+    [data-testid="stSidebar"] {
+        min-width: 300px !important;
+        max-width: 360px !important;
+    }
+}
+
+@media (min-width: 1025px) {
+    [data-testid="stSidebar"] {
+        min-width: 320px !important;
+        max-width: 400px !important;
+    }
 }
 </style>
 """
@@ -342,19 +407,13 @@ with st.sidebar:
     }
 
     def render_manual_yao_row(label: str, key: str) -> str:
-        """渲染单行的手动爻选择，下拉框内显示爻象符号和正反数量。"""
-        col_label, col_select = st.columns([2, 4])
-        with col_label:
-            st.write(f'**{label}**')
-        with col_select:
-            choice_key = st.selectbox(
-                label=f'{label}选择',
-                options=list(yao_options.keys()),
-                key=key,
-                label_visibility="collapsed",
-                format_func=lambda x: f"{yao_options[x]['symbol']} {x}"
-            )
-        return choice_key
+        """渲染单行手动爻选择，直接使用原生 label 避免嵌套列。"""
+        return st.selectbox(
+            label=label,
+            options=list(yao_options.keys()),
+            key=key,
+            format_func=lambda x: f"{yao_options[x]['symbol']}  {x}"
+        )
 
     option_sixth = render_manual_yao_row('上爻', 'option_sixth')
     option_fifth = render_manual_yao_row('五爻', 'option_fifth')
