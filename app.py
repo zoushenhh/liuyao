@@ -81,14 +81,25 @@ st.set_page_config(layout="wide",page_title="坚六爻-周易排盘")
 zhouyi_css = """
 <style>
 /* ============================================
-   1. 全局背景与基础 - 宣纸色
+   1. 全局背景与基础 - 宣纸色 + 容器防溢出
    ============================================ */
+* {
+    box-sizing: border-box;
+}
+
 .main .block-container {
     background-color: #F7F3E8;
     color: #2B2B2B;
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+[data-testid="stVerticalBlock"] {
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -239,7 +250,15 @@ h1, h2, h3, h4, h5, h6 {
     background-color: #F5F5F5;
     border: 1px solid #D4AF37;
     border-radius: 4px;
-    font-family: 'Consolas', monospace;
+    font-family: 'Consolas', 'SimSun', monospace;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.stCode pre, .stCode code {
+    white-space: pre-wrap !important;
+    word-break: break-all;
+    overflow-wrap: break-word;
 }
 
 hr {
@@ -289,12 +308,9 @@ hr {
         width: 100% !important;
     }
 
-    /* 排盘代码块缩小字号 + 横向滚动 */
+    /* 排盘代码块缩小字号 */
     .stCode code, .stCode pre {
         font-size: 11px !important;
-        white-space: pre !important;
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch;
     }
 
     /* 减小主区域两侧留白 */
@@ -322,7 +338,7 @@ hr {
     }
 
     .stCode code, .stCode pre {
-        font-size: 13px !important;
+        font-size: 12px !important;
     }
 }
 
@@ -561,14 +577,14 @@ def render_result_page():
         reset_cast()
         return
 
-    # 顶部导航
-    col_title, col_back, col_cfg = st.columns([2, 1, 1])
-    with col_title:
-        st.title("排盘结果")
-    with col_back:
+    st.title("排盘结果")
+
+    # 两个按钮一行，放在标签页下方
+    col_btn1, col_btn2 = st.columns(2)
+    with col_btn1:
         if st.button("重新摇卦", use_container_width=True):
             reset_cast()
-    with col_cfg:
+    with col_btn2:
         if st.button("AI配置", key="ai_cfg_top", use_container_width=True):
             st.session_state.previous_page = "result"
             st.session_state.page = "ai_settings"
