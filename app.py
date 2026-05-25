@@ -506,7 +506,7 @@ def render_ai_tab(pan_result: str):
     with col_gen:
         generate = st.button("生成AI解读", type="primary", use_container_width=True)
     with col_cfg:
-        if st.button("AI配置", use_container_width=True):
+        if st.button("AI配置", key="ai_cfg_in_tab", use_container_width=True):
             st.session_state.previous_page = "result"
             st.session_state.page = "ai_settings"
             st.rerun()
@@ -569,7 +569,7 @@ def render_result_page():
         if st.button("重新摇卦", use_container_width=True):
             reset_cast()
     with col_cfg:
-        if st.button("AI配置", use_container_width=True):
+        if st.button("AI配置", key="ai_cfg_top", use_container_width=True):
             st.session_state.previous_page = "result"
             st.session_state.page = "ai_settings"
             st.rerun()
