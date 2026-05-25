@@ -184,25 +184,24 @@ print(Iching().display_pan(2023,5,27,16,0))
 
 ## **6. 在线使用与部署**
 
-### 6.1 Hugging Face Spaces（推荐）
+### 6.1 Streamlit Cloud（推荐）
 
 免费在线版，手机/电脑浏览器直接打开：
 
-**[https://huggingface.co/spaces/zoushenhh/liuyao](https://huggingface.co/spaces/zoushenhh/liuyao)**
+**[https://9bvk9s8k8kudakw9vqdcf4.streamlit.app/](https://9bvk9s8k8kudakw9vqdcf4.streamlit.app/)**
 
 - 无需安装，打开即用
 - 手机浏览器自动适配
-- AI 解读需在侧边栏配置 API Key
-- 私有部署，无需梯子
+- AI 解读需在侧边栏配置 API Key（存储在浏览器 localStorage）
 
 ### 6.2 自行部署
 
-参考第 4-5 章，支持 Streamlit Cloud、Hugging Face Spaces 或自建 VPS。关键部署要点：
+参考第 4-5 章。关键部署要点：
 
 1. `ichingshifa/data.pkl` 必须部署在同一目录层级
-2. 删除 `.gitignore` 中 `.streamlit/` 排除项以包含主题配置
-3. 云平台设置 `/data` 目录用于 AI 配置持久化（自动检测）
-4. `ai_settings.json` 应加入 `.gitignore`，通过侧边栏输入 API Key
+2. `.streamlit/config.toml` 需包含在部署中（主题配置）
+3. `ai_settings.json` 应加入 `.gitignore`，通过侧边栏输入 API Key
+4. Python 版本建议 3.10（3.14 需放宽依赖版本限制）
 
 ### 6.3 旧版应用
 
