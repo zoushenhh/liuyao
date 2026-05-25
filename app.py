@@ -1,14 +1,10 @@
 import urllib.request
 import json
-import io
-import contextlib
 from typing import Dict, Any, List
 
 import streamlit as st
 import streamlit.components.v1 as components
 import pendulum as pdlm
-from contextlib import contextmanager, redirect_stdout
-from io import StringIO
 from ichingshifa import ichingshifa
 
 # 导入自定义模块
@@ -52,17 +48,6 @@ def _ls_save(settings_dict):
     </script>
     """, height=0)
 
-
-@contextmanager
-def st_capture(output_func):
-    with StringIO() as stdout, redirect_stdout(stdout):
-        old_write = stdout.write
-        def new_write(string):
-            ret = old_write(string)
-            output_func(stdout.getvalue())
-            return ret
-        stdout.write = new_write
-        yield
 
 def get_file_content_as_string(path):
     """优先读本地文件，不存在则从 ichingshifa 仓库拉取"""
@@ -595,50 +580,36 @@ with pan:
         st.subheader("📊 排盘结果")
 
         # 生成排盘结果
-        pan_result_obj = ichingshifa.Iching().display_pan(y,m,d,h,min)
-        qigua_result = ichingshifa.Iching().qigua_time(y,m,d,h,min)
-        dayan_method = qigua_result.get("大衍筮法", [])
-        combine1 = dayan_method[0] if dayan_method else "777777"  # 默认值
-        pan_m_result = ichingshifa.Iching().display_pan_m(y,m,d,h,min,combine1)
-
-        # 获取当前爻列表
-        if manual:
-            # 使用手动选择的爻，提取爻象类型
-            yao_list = [extract_yao_type(option) for option in [option_first, option_second, option_third, option_forth, option_fifth, option_sixth]]
-        else:
-            # 从时间起卦的爻值解析爻象
-            yao_numbers = list(combine1)
-            yaodict_reverse = {"6": "老阴", "8": "少阴", "7": "少阳", "9": "老阳"}
-            yao_list = [yaodict_reverse.get(num, "少阴") for num in yao_numbers]
-
-        st.session_state.current_yao_list = yao_list
-
-        # 使用StringIO捕获排盘输出
-        pan_output = io.StringIO()
         try:
-            with contextlib.redirect_stdout(pan_output):
-                if not manual:
-                    print(pan_result_obj)
-                else:
-                    try:
-                        print(pan_m_result)
-                    except (ValueError, UnboundLocalError):
-                        print(pan_result_obj)
+            pan_result_obj = ichingshifa.Iching().display_pan(y,m,d,h,min)
+            qigua_result = ichingshifa.Iching().qigua_time(y,m,d,h,min)
+            dayan_method = qigua_result.get("大衍筮法", [])
+            combine1 = dayan_method[0] if dayan_method else "777777"  # 默认值
+            pan_m_result = ichingshifa.Iching().display_pan_m(y,m,d,h,min,combine1)
 
-            # 保存排盘结果到session state
-            original_result = pan_output.getvalue()
-            st.session_state.latest_pan_result = original_result
+            # 获取当前爻列表
+            if manual:
+                yao_list = [extract_yao_type(option) for option in [option_first, option_second, option_third, option_forth, option_fifth, option_sixth]]
+            else:
+                yao_numbers = list(combine1)
+                yaodict_reverse = {"6": "老阴", "8": "少阴", "7": "少阳", "9": "老阳"}
+                yao_list = [yaodict_reverse.get(num, "少阴") for num in yao_numbers]
 
-            # 显示传统排盘结果
-            output2 = st.empty()
-            with st_capture(output2.code):
-                if not manual:
-                    print(pan_result_obj)
-                else:
-                    try:
-                        print(pan_m_result)
-                    except (ValueError, UnboundLocalError):
-                        print(pan_result_obj)
+            st.session_state.current_yao_list = yao_list
+
+            # 确定显示内容
+            display_result = pan_result_obj
+            if manual:
+                try:
+                    display_result = pan_m_result
+                except (ValueError, UnboundLocalError):
+                    pass
+
+            # 保存排盘结果供 AI 使用
+            st.session_state.latest_pan_result = str(display_result)
+
+            # 直接显示
+            st.code(display_result)
 
         except Exception as e:
             st.error(f"排盘生成失败: {e}")
