@@ -281,6 +281,10 @@ hr {
 """
 
 st.markdown(zhouyi_css, unsafe_allow_html=True)
+
+# localStorage 恢复必须在任何 UI 渲染之前，否则 st.stop() 会阻止排盘内容
+_ls_init()
+
 pan,booktext,oexample,update,links = st.tabs([' 🧮排盘 ',  ' 🚀占诀 ', ' 📜古占例 ', '🆕日志', ' 🔗连结 '])
 
 with st.sidebar:
@@ -413,9 +417,6 @@ with st.sidebar:
     # 初始化AI模块
     if "ai_module" not in st.session_state:
         st.session_state.ai_module = AIInterpretationModule()
-
-    # 优先从浏览器 localStorage 恢复，其次读文件
-    _ls_init()
 
     if "ai_settings" not in st.session_state:
         st.session_state.ai_settings = st.session_state.ai_module.load_settings()
