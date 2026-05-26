@@ -302,6 +302,12 @@ def init_state():
         st.session_state.ai_module = AIInterpretationModule()
     if "ai_settings" not in st.session_state:
         st.session_state.ai_settings = st.session_state.ai_module.load_settings()
+    else:
+        # 始终刷新提示词为代码中的默认值（防止旧缓存覆盖）
+        defaults = st.session_state.ai_module.default_settings
+        st.session_state.ai_settings["system_prompt"] = defaults["system_prompt"]
+        st.session_state.ai_settings["user_prompt_template"] = defaults["user_prompt_template"]
+        st.session_state.ai_settings["timeout"] = defaults["timeout"]
     if "ai_reading" not in st.session_state:
         st.session_state.ai_reading = ""
     if "cast_data" not in st.session_state:
