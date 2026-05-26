@@ -78,6 +78,9 @@ zhouyi_css = """
 
 h1, h2, h3, h4, h5, h6 { color: #2B2B2B; font-family: 'SimSun', '宋体', serif; font-weight: bold; }
 
+/* Align columns vertically center */
+[data-testid="stHorizontalBlock"] { align-items: center !important; }
+
 /* Inputs */
 .stTextInput > div > div > input, .stTextArea > div > div > textarea,
 .stSelectbox > div > div, .stNumberInput > div > div > input, .stDateInput > div > div > input,
@@ -101,19 +104,23 @@ h1, h2, h3, h4, h5, h6 { color: #2B2B2B; font-family: 'SimSun', '宋体', serif;
 }
 .stButton > button[kind="secondary"]:hover { background: linear-gradient(135deg, #F4E4C1 0%, #D4AF37 100%); }
 
-/* Popover (help guide) */
-[data-testid="stPopover"] button { min-height: 44px; min-width: 44px; }
-
-/* Tabs */
-.stTabs [data-baseweb="tab-list"] { background-color: #EFEBE2; border-radius: 8px; padding: 4px; border: 2px solid #D4AF37; }
+/* Tabs — equal-width stretch */
+.stTabs [data-baseweb="tab-list"] {
+    background-color: #EFEBE2; border-radius: 8px; padding: 4px; border: 2px solid #D4AF37;
+    display: flex; gap: 2px;
+}
 .stTabs [data-baseweb="tab"] {
     background-color: transparent; color: #2B2B2B; border-radius: 6px;
     padding: 12px 8px; font-weight: bold; font-family: 'SimSun', '宋体', serif;
-    transition: all 0.3s ease; min-height: 44px; flex: 1; text-align: center;
+    transition: all 0.3s ease; min-height: 44px; flex: 1 1 0; text-align: center;
+    white-space: nowrap;
 }
 .stTabs [aria-selected="true"] {
     background: linear-gradient(135deg, #9E2A2B 0%, #B83640 100%); color: #FFFFFF;
 }
+
+/* Nested tabs (文档 subtabs) */
+.stTabs + .stTabs [data-baseweb="tab-list"] { border: 1px solid #D4AF37; margin-top: 4px; }
 
 /* Expander */
 [data-testid="stExpander"] details summary {
@@ -121,7 +128,7 @@ h1, h2, h3, h4, h5, h6 { color: #2B2B2B; font-family: 'SimSun', '宋体', serif;
     font-family: 'SimSun', '宋体', serif; font-weight: bold; min-height: 44px;
 }
 
-/* Code */
+/* Code blocks */
 .stCode {
     background-color: #F5F5F5; border: 1px solid #D4AF37; border-radius: 4px;
     font-family: 'Consolas', 'SimSun', monospace; max-width: 100%; overflow-x: auto;
@@ -130,16 +137,31 @@ h1, h2, h3, h4, h5, h6 { color: #2B2B2B; font-family: 'SimSun', '宋体', serif;
 
 hr { border: none; height: 2px; background: linear-gradient(90deg, transparent, #D4AF37, transparent); margin: 12px 0; }
 
-/* Compact selects for yao grid */
+/* Compact yao-select grid */
 .yao-select [data-baseweb="select"] { min-height: 36px !important; }
 .yao-select label { font-size: 12px !important; }
 
-/* Wide mode: constrain content */
+/* Scrollable card */
+[data-testid="stVerticalBlock"] [data-testid="stVerticalBlock"] {
+    border: 1px solid #D4AF37; border-radius: 6px; background: #FFFAF0;
+}
+
+/* Desktop: constrain width */
 @media (min-width: 1024px) {
     .main .block-container { max-width: 960px; margin: 0 auto; padding: 20px !important; }
 }
-@media (max-width: 480px) {
+
+/* Tablet */
+@media (min-width: 641px) and (max-width: 1023px) {
+    .main .block-container { padding: 16px !important; }
+}
+
+/* Phone */
+@media (max-width: 640px) {
     .main .block-container { padding: 8px !important; }
+    .stTabs [data-baseweb="tab"] { padding: 10px 4px; font-size: 12px; }
+    .stTabs [data-baseweb="tab-list"] { overflow-x: auto; flex-wrap: nowrap; }
+    .stCode code, .stCode pre { font-size: 11px !important; }
 }
 </style>
 """
@@ -202,17 +224,17 @@ def render_home_page():
     pp_time = st.session_state.pp_time
 
     # Header row: date | time | question mark | gear
-    hc1, hc2, hc3, hc4, hc5 = st.columns([1.5, 1, 0.2, 0.2, 0.2])
+    hc1, hc2, hc3, hc4 = st.columns([1.3, 0.9, 0.12, 0.12])
     with hc1:
         pp_date = st.date_input("排盘日期", pp_date, label_visibility="collapsed")
     with hc2:
         pp_time = st.time_input("排盘时间", value=pp_time, label_visibility="collapsed")
         st.session_state.pp_time = pp_time
-    with hc4:
-        help_clicked = st.button("?", key="help_btn", help="如何摇卦")
+    with hc3:
+        help_clicked = st.button("?", key="help_btn", help="摇卦帮助")
         if help_clicked:
             st.session_state.show_help = not st.session_state.get("show_help", False)
-    with hc5:
+    with hc4:
         if st.button("⚙", key="cfg_home"):
             st.session_state.previous_page = "home"
             st.session_state.page = "ai_settings"
@@ -233,7 +255,7 @@ def render_home_page():
                     f"第{idx+1}次（{YAO_LABELS[idx]}）",
                     options=list(YAO_OPTIONS.keys()),
                     key=f"yao_{idx}",
-                    format_func=lambda name, i=idx: f"{YAO_OPTIONS[name]['symbol']} {name}",
+                    format_func=lambda name: f"{YAO_OPTIONS[name]['symbol']} {name}",
                 )
                 yao_code += YAO_OPTIONS[choice]["code"]
 
@@ -250,9 +272,8 @@ def render_home_page():
             label_visibility="collapsed",
         )
     with qc2:
-        st.markdown("<div style='margin-top: 4px;'>", unsafe_allow_html=True)
         cast_btn = st.button("生成排盘", type="primary", use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        
 
     if cast_btn:
         y, mo, d = pp_date.year, pp_date.month, pp_date.day
@@ -331,7 +352,7 @@ def render_result_page():
         return
 
     # Header row: back | info | recast button | gear
-    hc1, hc2, hc3, hc4 = st.columns([0.2, 3, 1, 0.3])
+    hc1, hc2, hc3, hc4 = st.columns([0.12, 2, 1, 0.15])
     with hc1:
         if st.button("⬅", key="back_home"):
             reset_cast()
