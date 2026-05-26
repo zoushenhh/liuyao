@@ -526,19 +526,18 @@ def render_result_page():
     # ---- Auto AI call (after tabs render, so user sees content first) ----
     if ai_waiting:
         st.session_state.ai_requested = False
-        with st.spinner("AI 正在解读中…"):
-            try:
-                st.session_state.ai_reading = (
-                    st.session_state.ai_module.call_llm_api(
-                        question=question,
-                        pan_result=cast_data["pan_result"],
-                        settings=settings,
-                    )
+        try:
+            st.session_state.ai_reading = (
+                st.session_state.ai_module.call_llm_api(
+                    question=question,
+                    pan_result=cast_data["pan_result"],
+                    settings=settings,
                 )
-            except ValueError as ve:
-                st.session_state.ai_error = str(ve)
-            except Exception as e:
-                st.session_state.ai_error = f"AI解读失败: {e}"
+            )
+        except ValueError as ve:
+            st.session_state.ai_error = str(ve)
+        except Exception as e:
+            st.session_state.ai_error = f"AI解读失败: {e}"
         st.rerun()
 
 
