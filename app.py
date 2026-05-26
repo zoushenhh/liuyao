@@ -159,6 +159,8 @@ def init_state():
         st.session_state.cast_data = None
     if "pp_time" not in st.session_state:
         st.session_state.pp_time = pdlm.now(tz="Asia/Shanghai").time()
+    if "show_help" not in st.session_state:
+        st.session_state.show_help = False
 
 
 def generate_pan_result(y, m, d, h, minute, yao_code):
@@ -204,15 +206,18 @@ def render_home_page():
         pp_time = st.time_input("排盘时间", value=pp_time, label_visibility="collapsed")
         st.session_state.pp_time = pp_time
     with hc4:
-        with st.popover("?", use_container_width=True):
-            st.markdown(HELP_TEXT)
+        help_clicked = st.button("?", key="help_btn", help="如何摇卦")
+        if help_clicked:
+            st.session_state.show_help = not st.session_state.get("show_help", False)
     with hc5:
         if st.button("⚙", key="cfg_home"):
             st.session_state.previous_page = "home"
             st.session_state.page = "ai_settings"
             st.rerun()
 
-    st.markdown("<hr>", unsafe_allow_html=True)
+    if st.session_state.show_help:
+        with st.expander("如何摇卦？", expanded=True):
+            st.markdown(HELP_TEXT)
 
     # Yao selector: 3 columns x 2 rows
     yao_code = ""
