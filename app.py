@@ -210,9 +210,8 @@ h1, h2, h3, h4, h5, h6 {
     font-family: 'Consolas', 'SimSun', monospace !important;
 }
 .stCode pre, .stCode code {
-    white-space: pre-wrap !important; word-break: break-all !important;
-    overflow-wrap: break-word !important; max-width: 100% !important;
-}
+    white-space: pre !important; overflow-x: auto !important;
+    }
 
 /* ===== Messages (success/error/warning/info) ===== */
 .stSuccess, .stWarning, .stError, .stInfo {
