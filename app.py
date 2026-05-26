@@ -424,7 +424,7 @@ def render_home_page():
 
 
 # ================================================================
-#  Result page  —— 自动调用 AI + 标签页
+#  Result page  —— 先显示卦象，解读后台触发
 # ================================================================
 def render_result_page():
     cast_data = st.session_state.get("cast_data")
@@ -437,31 +437,6 @@ def render_result_page():
     question = cast_data.get("question", "").strip()
     ai_ready = bool(st.session_state.get("ai_reading"))
     ai_error = st.session_state.get("ai_error", "")
-    ai_waiting = (
-        st.session_state.get("ai_requested")
-        and not ai_ready
-        and not ai_error
-        and has_key
-        and question
-    )
-
-    # ---- Auto AI call (before tabs render) ----
-    if ai_waiting:
-        st.session_state.ai_requested = False
-        with st.spinner("AI 正在解读中，请稍候..."):
-            try:
-                st.session_state.ai_reading = (
-                    st.session_state.ai_module.call_llm_api(
-                        question=question,
-                        pan_result=cast_data["pan_result"],
-                        settings=settings,
-                    )
-                )
-            except ValueError as ve:
-                st.session_state.ai_error = str(ve)
-            except Exception as e:
-                st.session_state.ai_error = f"AI解读失败: {e}"
-        st.rerun()
 
     # ---- Header: back | info | recast | gear ----
     hc1, hc2, hc3, hc4 = st.columns([0.2, 3, 1.5, 0.35])
@@ -524,7 +499,43 @@ def render_result_page():
         elif not has_key:
             st.info("请先配置 API Key 以使用解读功能（点击右上角齿轮图标）")
         else:
-            st.info("解读内容生成中，请稍候...")
+            # Show trigger button for JS auto-click
+            gen_btn = st.button("开始解读", type="primary",
+                                key="gen_reading", use_container_width=True)
+            if st.session_state.get("ai_requested"):
+                st.session_state.ai_requested = False
+                # JS auto-clicks the button after a short delay
+                components.html("""
+                <script>
+                setTimeout(function(){
+                    var btns = window.parent.document.querySelectorAll('button');
+                    for (var i = 0; i < btns.length; i++) {
+                        if (btns[i].innerText.indexOf('开始解读') !== -1) {
+                            btns[i].click();
+                            break;
+                        }
+                    }
+                }, 300);
+                </script>
+                """, height=0)
+            if gen_btn:
+                with st.spinner("AI 正在解读中..."):
+                    try:
+                        st.session_state.ai_reading = (
+                            st.session_state.ai_module.call_llm_api(
+                                question=question,
+                                pan_result=cast_data["pan_result"],
+                                settings=settings,
+                            )
+                        )
+                        st.rerun()
+                    except ValueError as ve:
+                        st.session_state.ai_error = str(ve)
+                    except Exception as e:
+                        st.session_state.ai_error = f"AI解读失败: {e}"
+                st.rerun()
+            else:
+                st.info("解读准备中…")
 
     with doc_tab:
         sub1, sub2, sub3 = st.tabs(["占诀", "古占例", "日志"])

@@ -47,7 +47,8 @@ class AIInterpretationModule:
 - 结论明确，先给总体判断，再展开依据。
 - 语言通俗易懂，避免堆砌术语；必须使用术语时用白话解释。
 - 不使用 Emoji 符号。
-- 不夸大确定性，不宣称绝对准确。""",
+- 不夸大确定性，不宣称绝对准确。
+- **严禁寒暄**: 不要输出任何前置语（如"你好"、"根据你提供的卦象"、"以下解读供参考"等）。直接从"## 1. 核心断语"开始，一字不多。""",
             "user_prompt_template": """# Input Data:
 - **所问之事**: {question}
 - **排盘结果**:
@@ -114,7 +115,7 @@ class AIInterpretationModule:
 ## 6. 一句话总结
 用一句简短白话收束全卦，便于用户记住。""",
             "max_tokens": None,  # None表示不限制
-            "timeout": 60.0,
+            "timeout": 360.0,
             "max_retries": 3
         }
 
@@ -128,9 +129,14 @@ class AIInterpretationModule:
         if self.config_path.exists():
             try:
                 with self.config_path.open("r", encoding="utf-8") as f:
-                    loaded_settings = json.load(f)
-                    # 合并默认设置和用户设置，确保所有必要的键都存在
-                    return {**self.default_settings, **loaded_settings}
+                    loaded = json.load(f)
+                # 始终使用代码中的默认提示词，仅合并用户配置参数
+                settings = self.default_settings.copy()
+                for k in ("base_url", "api_key", "model", "temperature",
+                          "max_tokens", "timeout", "max_retries"):
+                    if k in loaded:
+                        settings[k] = loaded[k]
+                return settings
             except (json.JSONDecodeError, IOError) as e:
                 print(f"AI配置文件读取失败，使用默认设置: {e}")
                 return self.default_settings.copy()
@@ -255,10 +261,13 @@ class AIInterpretationModule:
         if not api_key:
             raise ValueError("请先配置API Key")
 
-        # 创建OpenAI客户端
+        # 创建OpenAI客户端（base_url 兼容 /v1 后缀）
         client_kwargs = {"api_key": api_key}
         base_url = settings.get("base_url", "").strip()
         if base_url:
+            base_url = base_url.rstrip("/")
+            if not base_url.endswith("/v1"):
+                base_url += "/v1"
             client_kwargs["base_url"] = base_url
 
         try:
