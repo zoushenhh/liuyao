@@ -512,7 +512,7 @@ def render_result_page():
         elif not has_key:
             st.info("请先配置 API Key 以使用解读功能（点击右上角齿轮图标）")
         else:
-            st.info("解读生成中，请稍后查看...")
+            pass  # tab disabled via CSS, no content shown
 
     with doc_tab:
         sub1, sub2, sub3 = st.tabs(["占诀", "古占例", "日志"])
