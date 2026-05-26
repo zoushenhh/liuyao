@@ -1,3 +1,4 @@
+import html
 import json
 
 import streamlit as st
@@ -428,13 +429,9 @@ def render_home_page():
 # ================================================================
 def render_ai_tab(pan_result: str):
     if st.session_state.get("ai_reading"):
-        # Result mode — card display (no input)
-        st.markdown(
-            '<div class="card" style="padding:16px;margin:4px;max-height:60vh;overflow-y:auto;">'
-            f'<div style="font-size:14px;line-height:1.8;white-space:pre-wrap;">'
-            f'{st.session_state.ai_reading}</div></div>',
-            unsafe_allow_html=True,
-        )
+        # Result mode — card display (no input), adaptive height
+        with st.container(height=450):
+            st.markdown(st.session_state.ai_reading)
         cc1, cc2 = st.columns(2)
         with cc1:
             if st.button("复制结果", key="copy_result", use_container_width=True):
@@ -520,8 +517,15 @@ def render_result_page():
     pan_tab, ai_tab, doc_tab = st.tabs(["卦象", "AI 解读", "文档"])
 
     with pan_tab:
-        with st.container(height=500):
-            st.code(cast_data["pan_result"])
+        pan_text = html.escape(cast_data["pan_result"])
+        st.markdown(
+            f'<div style="max-height:45vh;overflow-y:auto;background:#F5F5F5;'
+            f'padding:12px;border:1px solid #D4AF37;border-radius:4px;">'
+            f'<pre style="white-space:pre-wrap;word-break:break-all;margin:0;'
+            f'font-family:Consolas,SimSun,monospace;font-size:14px;">{pan_text}'
+            f'</pre></div>',
+            unsafe_allow_html=True,
+        )
 
     with ai_tab:
         render_ai_tab(cast_data["pan_result"])
