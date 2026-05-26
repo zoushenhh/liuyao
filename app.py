@@ -517,15 +517,8 @@ def render_result_page():
     pan_tab, ai_tab, doc_tab = st.tabs(["卦象", "AI 解读", "文档"])
 
     with pan_tab:
-        pan_text = html.escape(cast_data["pan_result"])
-        st.markdown(
-            f'<div style="max-height:45vh;overflow-y:auto;background:#F5F5F5;'
-            f'padding:12px;border:1px solid #D4AF37;border-radius:4px;">'
-            f'<pre style="white-space:pre-wrap;word-break:break-all;margin:0;'
-            f'font-family:Consolas,SimSun,monospace;font-size:14px;">{pan_text}'
-            f'</pre></div>',
-            unsafe_allow_html=True,
-        )
+        with st.container(height=450):
+            st.code(cast_data["pan_result"])
 
     with ai_tab:
         render_ai_tab(cast_data["pan_result"])
