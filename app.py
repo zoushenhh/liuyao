@@ -1,5 +1,4 @@
 import json
-from typing import Dict, Any
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -54,10 +53,10 @@ def get_file_content_as_string(path):
 
 
 YAO_OPTIONS = {
-    "三枚正面": {"code": "6", "type": "老阴", "symbol": "⚊", "desc": "阴爻发动（变爻）"},
-    "两正一反": {"code": "7", "type": "少阳", "symbol": "⚈", "desc": "阳爻不变（静爻）"},
-    "两反一正": {"code": "8", "type": "少阴", "symbol": "⚉", "desc": "阴爻不变（静爻）"},
-    "三枚反面": {"code": "9", "type": "老阳", "symbol": "⚋", "desc": "阳爻发动（变爻）"},
+    "三枚正面": {"code": "6", "type": "老阴", "symbol": "⚋ x", "desc": "阴爻发动（变爻）"},
+    "两正一反": {"code": "7", "type": "少阳", "symbol": "⚊", "desc": "阳爻不变（静爻）"},
+    "两反一正": {"code": "8", "type": "少阴", "symbol": "⚋", "desc": "阴爻不变（静爻）"},
+    "三枚反面": {"code": "9", "type": "老阳", "symbol": "⚊ o", "desc": "阳爻发动（变爻）"},
 }
 
 YAO_LABELS = ["初爻", "二爻", "三爻", "四爻", "五爻", "上爻"]
@@ -67,100 +66,192 @@ st.set_page_config(layout="wide", page_title="坚六爻-周易排盘")
 
 zhouyi_css = """
 <style>
+:root {
+    --paper: #F7F3E8;
+    --dark: #2B2B2B;
+    --cinnabar: #9E2A2B;
+    --cinnabar-hover: #B83640;
+    --gold: #D4AF37;
+    --gold-light: #F4E4C1;
+}
+
 * { box-sizing: border-box; }
 
+/* body / block-container */
 .main .block-container {
-    background-color: #F7F3E8; color: #2B2B2B; border-radius: 8px;
-    padding: 12px !important; max-width: 100%; overflow-x: hidden;
+    background-color: var(--paper); color: var(--dark);
+    border-radius: 0; padding: 0 !important; max-width: 100%; overflow-x: hidden;
 }
 
-[data-testid="stVerticalBlock"] { max-width: 100%; overflow-x: hidden; }
+/* Hide Streamlit header/footer chrome */
+[data-testid="stHeader"] { display: none; }
+[data-testid="stToolbar"] { display: none; }
+footer { display: none; }
 
-h1, h2, h3, h4, h5, h6 { color: #2B2B2B; font-family: 'SimSun', '宋体', serif; font-weight: bold; }
+h1, h2, h3, h4, h5, h6 {
+    color: var(--dark); font-family: 'SimSun', '宋体', serif; font-weight: bold;
+}
 
-/* Align columns vertically center */
-[data-testid="stHorizontalBlock"] { align-items: center !important; }
+/* ===== Header bar ===== */
+.header-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; gap: 8px;
+    border-bottom: 2px solid var(--gold);
+    background: rgba(247, 243, 232, 0.9);
+    backdrop-filter: blur(8px);
+}
 
-/* Inputs */
-.stTextInput > div > div > input, .stTextArea > div > div > textarea,
-.stSelectbox > div > div, .stNumberInput > div > div > input, .stDateInput > div > div > input,
+/* ===== Card ===== */
+.card {
+    background: #FFFFFF; border: 1px solid var(--gold); border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* ===== Input fields ===== */
+.stTextInput > div > div > input,
+.stTextArea > div > div > textarea,
+.stSelectbox > div > div,
+.stNumberInput > div > div > input,
+.stDateInput > div > div > input,
 .stTimeInput > div > div > input {
-    background-color: #FFFFFF; border: 2px solid #D4AF37; border-radius: 6px;
-    color: #2B2B2B; font-family: 'SimSun', '宋体', serif; transition: all 0.3s ease; min-height: 44px;
+    background-color: #FFFFFF !important;
+    border: 2px solid var(--gold) !important;
+    border-radius: 6px !important;
+    color: var(--dark) !important;
+    font-family: 'SimSun', '宋体', serif !important;
+    min-height: 44px !important;
+}
+.stTextInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus,
+.stSelectbox > div > div:focus-within {
+    border-color: var(--cinnabar) !important;
+    box-shadow: 0 0 0 2px rgba(158, 42, 43, 0.2) !important;
 }
 
-/* Buttons */
+/* ===== Buttons ===== */
 .stButton > button {
-    background: linear-gradient(135deg, #9E2A2B 0%, #B83640 100%);
-    color: #FFFFFF; border: none; border-radius: 6px; padding: 10px 20px;
-    font-weight: bold; font-family: 'SimSun', '宋体', serif;
-    transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.2); min-height: 44px;
+    background: var(--cinnabar) !important; color: #FFFFFF !important;
+    border: none !important; border-radius: 8px !important;
+    padding: 8px 16px !important; font-weight: bold !important;
+    font-family: 'SimSun', '宋体', serif !important;
+    min-height: 44px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
+    transition: all 0.15s !important;
 }
-.stButton > button:hover { background: linear-gradient(135deg, #B83640 0%, #9E2A2B 100%); transform: translateY(-1px); }
+.stButton > button:hover {
+    background: var(--cinnabar-hover) !important;
+}
+.stButton > button:active {
+    transform: scale(0.98) !important;
+}
 
 /* Gold secondary button */
 .stButton > button[kind="secondary"] {
-    background: linear-gradient(135deg, #D4AF37 0%, #F4E4C1 100%); color: #2B2B2B;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%) !important;
+    color: var(--dark) !important;
 }
-.stButton > button[kind="secondary"]:hover { background: linear-gradient(135deg, #F4E4C1 0%, #D4AF37 100%); }
 
-/* Tabs — equal-width stretch */
+/* Icon buttons (back, ?, gear) */
+.icon-btn > button {
+    min-width: 44px !important; width: 44px !important;
+    padding: 8px !important; font-size: 18px !important;
+    background: transparent !important; color: var(--cinnabar) !important;
+    box-shadow: none !important;
+}
+.icon-btn > button:hover {
+    color: var(--cinnabar-hover) !important;
+    background: transparent !important;
+}
+
+/* ===== Tabs ===== */
 .stTabs [data-baseweb="tab-list"] {
-    background-color: #EFEBE2; border-radius: 8px; padding: 4px; border: 2px solid #D4AF37;
-    display: flex; gap: 2px;
+    background: transparent !important;
+    border-bottom: 2px solid var(--gold) !important;
+    border-radius: 0 !important; padding: 0 !important;
+    display: flex !important; gap: 0 !important;
 }
 .stTabs [data-baseweb="tab"] {
-    background-color: transparent; color: #2B2B2B; border-radius: 6px;
-    padding: 12px 8px; font-weight: bold; font-family: 'SimSun', '宋体', serif;
-    transition: all 0.3s ease; min-height: 44px; flex: 1 1 0; text-align: center;
-    white-space: nowrap;
+    flex: 1 1 0 !important; text-align: center !important;
+    padding: 12px 4px !important; min-height: 44px !important;
+    font-weight: bold !important; font-family: 'SimSun', '宋体', serif !important;
+    font-size: 14px !important; color: var(--dark) !important;
+    background: transparent !important; border-radius: 0 !important;
 }
 .stTabs [aria-selected="true"] {
-    background: linear-gradient(135deg, #9E2A2B 0%, #B83640 100%); color: #FFFFFF;
+    background: linear-gradient(135deg, var(--cinnabar) 0%, var(--cinnabar-hover) 100%) !important;
+    color: #FFFFFF !important;
 }
 
-/* Nested tabs (文档 subtabs) */
-.stTabs + .stTabs [data-baseweb="tab-list"] { border: 1px solid #D4AF37; margin-top: 4px; }
+/* Nested tabs (文档) */
+.stTabs .stTabs [data-baseweb="tab-list"] {
+    border: 1px solid var(--gold) !important; border-radius: 6px !important;
+    padding: 2px !important; margin: 4px 0 !important;
+}
+.stTabs .stTabs [data-baseweb="tab"] {
+    border-radius: 6px !important; padding: 8px 4px !important;
+    min-height: 36px !important; font-size: 13px !important;
+}
 
-/* Expander */
+/* ===== Expander ===== */
 [data-testid="stExpander"] details summary {
-    background-color: #EFEBE2; border-radius: 6px; border: 1px solid #D4AF37;
-    font-family: 'SimSun', '宋体', serif; font-weight: bold; min-height: 44px;
+    font-family: 'SimSun', '宋体', serif; font-weight: bold;
+    min-height: 44px; color: var(--cinnabar);
+    border-bottom: 1px solid var(--gold);
+}
+[data-testid="stExpander"] details > div {
+    padding: 8px 0 !important;
 }
 
-/* Code blocks */
+/* ===== Code blocks ===== */
 .stCode {
-    background-color: #F5F5F5; border: 1px solid #D4AF37; border-radius: 4px;
-    font-family: 'Consolas', 'SimSun', monospace; max-width: 100%; overflow-x: auto;
+    background: #F5F5F5 !important;
+    border: none !important; border-radius: 0 !important;
+    font-family: 'Consolas', 'SimSun', monospace !important;
 }
-.stCode pre, .stCode code { white-space: pre-wrap !important; word-break: break-all; overflow-wrap: break-word; }
-
-hr { border: none; height: 2px; background: linear-gradient(90deg, transparent, #D4AF37, transparent); margin: 12px 0; }
-
-/* Compact yao-select grid */
-.yao-select [data-baseweb="select"] { min-height: 36px !important; }
-.yao-select label { font-size: 12px !important; }
-
-/* Scrollable card */
-[data-testid="stVerticalBlock"] [data-testid="stVerticalBlock"] {
-    border: 1px solid #D4AF37; border-radius: 6px; background: #FFFAF0;
+.stCode pre, .stCode code {
+    white-space: pre-wrap !important; word-break: break-all !important;
+    overflow-wrap: break-word !important; max-width: 100% !important;
 }
 
-/* Desktop: constrain width */
+/* ===== Messages (success/error/warning/info) ===== */
+.stSuccess, .stWarning, .stError, .stInfo {
+    font-family: 'SimSun', '宋体', serif; border-radius: 6px;
+}
+
+hr {
+    border: none; height: 1px;
+    background: var(--gold); opacity: 0.3; margin: 12px 0;
+}
+
+/* ===== Column alignment ===== */
+[data-testid="stHorizontalBlock"] { align-items: center !important; gap: 8px !important; }
+
+/* ===== Yao grid ===== */
+.yao-cell label { font-size: 12px !important; color: var(--cinnabar) !important;
+                  font-family: 'SimSun', '宋体', serif !important; font-weight: bold !important; }
+
+/* ===== Desktop max-width ===== */
 @media (min-width: 1024px) {
-    .main .block-container { max-width: 960px; margin: 0 auto; padding: 20px !important; }
+    .main .block-container {
+        max-width: 720px; margin: 0 auto;
+        border-left: 1px solid var(--gold);
+        border-right: 1px solid var(--gold);
+        min-height: 100vh;
+    }
 }
 
-/* Tablet */
-@media (min-width: 641px) and (max-width: 1023px) {
-    .main .block-container { padding: 16px !important; }
+@media (min-width: 1280px) {
+    .main .block-container { max-width: 900px; }
 }
 
-/* Phone */
+/* ===== Phone ===== */
 @media (max-width: 640px) {
-    .main .block-container { padding: 8px !important; }
-    .stTabs [data-baseweb="tab"] { padding: 10px 4px; font-size: 12px; }
-    .stTabs [data-baseweb="tab-list"] { overflow-x: auto; flex-wrap: nowrap; }
+    .stTabs [data-baseweb="tab"] {
+        padding: 10px 2px; font-size: 12px;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        overflow-x: auto; flex-wrap: nowrap;
+    }
     .stCode code, .stCode pre { font-size: 11px !important; }
 }
 </style>
@@ -199,7 +290,7 @@ def reset_cast():
     st.rerun()
 
 
-# ---- Help popover content ----
+# ---- Help content ----
 HELP_TEXT = """
 **准备工具**：3枚硬币
 
@@ -217,63 +308,74 @@ HELP_TEXT = """
 """
 
 
-# ---- Home page ----
+# ================================================================
+#  Home page  —— 对照 React HomePage.tsx
+# ================================================================
 def render_home_page():
     now = pdlm.now(tz="Asia/Shanghai")
     pp_date = now.date()
     pp_time = st.session_state.pp_time
 
-    # Header row: date | time | question mark | gear
-    hc1, hc2, hc3, hc4 = st.columns([1.3, 0.9, 0.12, 0.12])
+    # ---- Header bar ----
+    hc1, hc2, hc3, hc4 = st.columns([1.2, 0.8, 0.1, 0.1])
     with hc1:
         pp_date = st.date_input("排盘日期", pp_date, label_visibility="collapsed")
     with hc2:
         pp_time = st.time_input("排盘时间", value=pp_time, label_visibility="collapsed")
         st.session_state.pp_time = pp_time
     with hc3:
-        help_clicked = st.button("?", key="help_btn", help="摇卦帮助")
-        if help_clicked:
-            st.session_state.show_help = not st.session_state.get("show_help", False)
+        with st.container(key="help_wrapper"):
+            help_clicked = st.button("?", key="help_btn")
+            if help_clicked:
+                st.session_state.show_help = not st.session_state.get("show_help", False)
     with hc4:
         if st.button("⚙", key="cfg_home"):
             st.session_state.previous_page = "home"
             st.session_state.page = "ai_settings"
             st.rerun()
 
+    st.markdown('<div class="header-bar-spacer" style="height:0;"></div>', unsafe_allow_html=True)
+
     if st.session_state.show_help:
         with st.expander("如何摇卦？", expanded=True):
             st.markdown(HELP_TEXT)
 
-    # Yao selector: 3 columns x 2 rows
+    # ---- Yao grid ----
+    st.markdown("### 设定爻位")
+    st.caption("从第一次（初爻）开始，依次向上填写到第六次（上爻）")
+
     yao_code = ""
     for row in range(2):
         cols = st.columns(3)
         for col_i in range(3):
-            idx = row * 3 + col_i  # 0-5
+            idx = row * 3 + col_i
             with cols[col_i]:
+                st.markdown(f'<p class="yao-cell-label" style="font-size:12px;color:#9E2A2B;'
+                           f'font-weight:bold;margin:0 0 2px 0;">{YAO_LABELS[idx]}</p>',
+                           unsafe_allow_html=True)
                 choice = st.selectbox(
-                    f"第{idx+1}次（{YAO_LABELS[idx]}）",
+                    YAO_LABELS[idx],
                     options=list(YAO_OPTIONS.keys()),
                     key=f"yao_{idx}",
+                    label_visibility="collapsed",
                     format_func=lambda name: f"{YAO_OPTIONS[name]['symbol']} {name}",
                 )
                 yao_code += YAO_OPTIONS[choice]["code"]
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
-    # Question + Button same row
-    qc1, qc2 = st.columns([3, 1.2])
+    # ---- Question + Button same row ----
+    qc1, qc2 = st.columns([3, 1])
     with qc1:
         question = st.text_area(
             "所问何事",
             key="question",
-            placeholder="例如：近期事业发展如何？",
-            height=60,
+            placeholder="所问何事？如：近期事业发展如何？",
+            height=48,
             label_visibility="collapsed",
         )
     with qc2:
         cast_btn = st.button("生成排盘", type="primary", use_container_width=True)
-        
 
     if cast_btn:
         y, mo, d = pp_date.year, pp_date.month, pp_date.day
@@ -291,13 +393,18 @@ def render_home_page():
         st.rerun()
 
 
-# ---- AI Tab ----
+# ================================================================
+#  AI Tab  —— 对照 React AITab.tsx
+# ================================================================
 def render_ai_tab(pan_result: str):
     if st.session_state.get("ai_reading"):
-        # Result mode: show scrollable card + copy/download
-        with st.container(height=500):
-            st.markdown(st.session_state.ai_reading)
-
+        # Result mode — card display (no input)
+        st.markdown(
+            '<div class="card" style="padding:16px;margin:4px;max-height:60vh;overflow-y:auto;">'
+            f'<div style="font-size:14px;line-height:1.8;white-space:pre-wrap;">'
+            f'{st.session_state.ai_reading}</div></div>',
+            unsafe_allow_html=True,
+        )
         cc1, cc2 = st.columns(2)
         with cc1:
             if st.button("复制结果", key="copy_result", use_container_width=True):
@@ -315,10 +422,13 @@ def render_ai_tab(pan_result: str):
     # Input mode
     question = st.session_state.get("cast_data", {}).get("question", "")
     question_input = st.text_area(
-        "所问何事", value=question, key="result_question", height=60,
+        "调整问题描述，以获得更精准的解读",
+        value=question,
+        key="result_question",
+        height=48,
     )
 
-    gen_btn = st.button("生成AI解读", type="primary", use_container_width=True)
+    gen_btn = st.button("生成 AI 解读", type="primary", use_container_width=True)
 
     if gen_btn:
         settings = st.session_state.get("ai_settings", {})
@@ -328,7 +438,7 @@ def render_ai_tab(pan_result: str):
         if not question_input.strip():
             st.warning("请输入所问之事")
             return
-        with st.spinner("AI正在解读中..."):
+        with st.spinner("AI 正在解读中..."):
             try:
                 st.session_state.ai_reading = st.session_state.ai_module.call_llm_api(
                     question=question_input.strip(),
@@ -340,29 +450,35 @@ def render_ai_tab(pan_result: str):
                 st.error(f"{ve}")
             except Exception as e:
                 st.error(f"AI解读失败: {e}")
-    else:
+    elif not st.session_state.get("ai_reading"):
         st.info("输入问题后点击上方按钮生成 AI 解读")
 
 
-# ---- Result page ----
+# ================================================================
+#  Result page  —— 对照 React ResultPage.tsx
+# ================================================================
 def render_result_page():
     cast_data = st.session_state.get("cast_data")
     if not cast_data:
         reset_cast()
         return
 
-    # Header row: back | info | recast button | gear
-    hc1, hc2, hc3, hc4 = st.columns([0.12, 2, 1, 0.15])
+    # ---- Header: back | info | recast | gear ----
+    hc1, hc2, hc3, hc4 = st.columns([0.1, 2.5, 0.8, 0.12])
     with hc1:
-        if st.button("⬅", key="back_home"):
+        if st.button("‹", key="back_home", help="返回首页"):
             reset_cast()
     with hc2:
-        info = f"{cast_data['date']} {cast_data['time']} | 卦码:{cast_data['yao_code']}"
+        info = f"{cast_data['date']}  {cast_data['time']}  |  卦码: {cast_data['yao_code']}"
         if cast_data.get("question"):
-            info += f" | {cast_data['question']}"
-        st.caption(info)
+            info += f"  |  {cast_data['question']}"
+        st.markdown(
+            f'<p style="font-size:12px;color:#666;margin:8px 0;overflow:hidden;'
+            f'text-overflow:ellipsis;white-space:nowrap;">{info}</p>',
+            unsafe_allow_html=True,
+        )
     with hc3:
-        if st.button("重新摇卦", key="recast", use_container_width=True):
+        if st.button("重新摇卦", key="recast", type="secondary", use_container_width=True):
             reset_cast()
     with hc4:
         if st.button("⚙", key="cfg_result"):
@@ -370,6 +486,7 @@ def render_result_page():
             st.session_state.page = "ai_settings"
             st.rerun()
 
+    # ---- 3 Tabs ----
     pan_tab, ai_tab, doc_tab = st.tabs(["卦象", "AI 解读", "文档"])
 
     with pan_tab:
@@ -389,54 +506,88 @@ def render_result_page():
             st.markdown(get_file_content_as_string("update.md"))
 
 
-# ---- Settings page ----
+# ================================================================
+#  Settings page  —— 对照 React SettingsPage.tsx
+# ================================================================
 def render_ai_settings_page():
     ai_module = st.session_state.ai_module
     current_settings = st.session_state.ai_settings
 
-    # Header
-    hc1, hc2, hc3 = st.columns([0.2, 3, 0.3])
+    # ---- Header: back | title ----
+    hc1, hc2 = st.columns([0.12, 3])
     with hc1:
-        if st.button("⬅", key="back_settings"):
+        if st.button("‹", key="back_settings", help="返回"):
             st.session_state.page = st.session_state.get("previous_page", "home")
             st.rerun()
     with hc2:
-        st.markdown("### AI 配置")
+        st.markdown(
+            '<h1 style="font-size:18px;color:#9E2A2B;margin:4px 0;">AI 配置</h1>',
+            unsafe_allow_html=True,
+        )
 
+    # ---- 基础设置 ----
     with st.expander("基础设置", expanded=True):
-        new_base_url = st.text_input("Base URL", value=current_settings.get("base_url", ""),
-                                     placeholder="留空使用 OpenAI 默认")
-        new_api_key = st.text_input("API Key", value=current_settings.get("api_key", ""),
-                                    type="password", placeholder="请输入API密钥")
+        new_base_url = st.text_input(
+            "Base URL", value=current_settings.get("base_url", ""),
+            placeholder="自定义 API 地址（可选，留空使用 OpenAI 默认）",
+        )
+        new_api_key = st.text_input(
+            "API Key", value=current_settings.get("api_key", ""),
+            type="password", placeholder="请输入 API 密钥",
+        )
 
-        # Model + Temperature same row
-        mc1, mc2 = st.columns([2, 1])
+        mc1, mc2 = st.columns([2, 1.2])
         with mc1:
-            new_model = st.text_input("模型名称", value=current_settings.get("model", "gpt-4o-mini"))
+            new_model = st.text_input(
+                "模型名称", value=current_settings.get("model", "gpt-4o-mini"),
+            )
         with mc2:
-            new_temperature = st.slider("温度", 0.0, 1.0,
-                                        float(current_settings.get("temperature", 0.7)), 0.1)
+            new_temperature = st.slider(
+                "温度", 0.0, 1.0,
+                float(current_settings.get("temperature", 0.7)), 0.1,
+            )
 
-    with st.expander("提示词设置", expanded=False):
-        new_system_prompt = st.text_area("系统提示词",
-                                         value=current_settings.get("system_prompt", ""), height=180)
-        new_user_prompt = st.text_area("用户提示词模板",
-                                       value=current_settings.get("user_prompt_template", ""), height=300,
-                                       help="使用 {question} 和 {pan_result} 作为占位符")
+    # ---- 提示词设置 ----
+    with st.expander("提示词设置"):
+        new_system_prompt = st.text_area(
+            "系统提示词", value=current_settings.get("system_prompt", ""),
+            height=180,
+        )
+        new_user_prompt = st.text_area(
+            "用户提示词模板",
+            value=current_settings.get("user_prompt_template", ""),
+            height=240,
+            help="使用 {question} 和 {pan_result} 作为占位符",
+        )
 
-    with st.expander("高级选项", expanded=False):
+    # ---- 高级选项 (collapsible) ----
+    with st.expander("高级选项"):
         ac1, ac2, ac3 = st.columns(3)
         with ac1:
-            new_max_tokens_val = st.number_input("最大Token数", value=current_settings.get("max_tokens") or 0,
-                                                 min_value=0, help="0表示不限制")
+            new_max_tokens_val = st.number_input(
+                "Token 数", value=current_settings.get("max_tokens") or 0,
+                min_value=0, help="0 = 不限制",
+            )
         with ac2:
-            new_timeout = st.number_input("超时(秒)", value=float(current_settings.get("timeout", 60.0)),
-                                          min_value=1.0, max_value=300.0)
+            new_timeout = st.number_input(
+                "超时(秒)", value=float(current_settings.get("timeout", 60.0)),
+                min_value=1.0, max_value=300.0,
+            )
         with ac3:
-            new_max_retries = st.number_input("重试次数", value=int(current_settings.get("max_retries", 3)),
-                                              min_value=0, max_value=10)
+            new_max_retries = st.number_input(
+                "重试次数", value=int(current_settings.get("max_retries", 3)),
+                min_value=0, max_value=10,
+            )
 
-    # Save / Reset
+    st.markdown("<hr>", unsafe_allow_html=True)
+
+    # ---- Status ----
+    if current_settings.get("api_key", "").strip():
+        st.success("API Key 已配置")
+    else:
+        st.warning("请配置 API Key 以使用 AI 解读功能")
+
+    # ---- Actions (Save / Reset) ----
     sc1, sc2 = st.columns(2)
     with sc1:
         if st.button("重置默认", use_container_width=True, key="reset_defaults"):
@@ -463,12 +614,6 @@ def render_ai_settings_page():
                 _ls_save(new_settings)
                 st.success("AI配置已保存到浏览器")
                 st.rerun()
-
-    current_api_key = current_settings.get("api_key", "").strip()
-    if current_api_key:
-        st.success("API Key 已配置")
-    else:
-        st.warning("请配置 API Key 以使用 AI 解读功能")
 
 
 # ---- Main router ----
