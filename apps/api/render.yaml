@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: liuyao-api
+    env: python
+    buildCommand: pip install -r apps/api/requirements.txt -r requirements.txt
+    startCommand: cd apps/api && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0

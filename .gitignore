@@ -108,3 +108,11 @@ ai_settings.json
 
 # Streamlit (config.toml is deployed)
 .streamlit/secrets.toml
+
+# Node
+node_modules/
+apps/web/dist/
+
+# Playwright
+.playwright-mcp/
+*.png
