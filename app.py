@@ -249,14 +249,6 @@ hr {
 @media (max-width: 640px) {
     .main .block-container { padding: 6px !important; }
 
-    /* Allow columns to wrap, icon columns get minimum width */
-    [data-testid="stHorizontalBlock"] {
-        flex-wrap: wrap !important;
-    }
-    [data-testid="stHorizontalBlock"] > div {
-        min-width: fit-content !important;
-        flex-shrink: 0 !important;
-    }
 
     /* Tabs: horizontal scroll, compact */
     .stTabs [data-baseweb="tab"] {
