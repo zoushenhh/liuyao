@@ -223,8 +223,14 @@ hr {
     background: var(--gold); opacity: 0.3; margin: 12px 0;
 }
 
-/* ===== Column alignment ===== */
-[data-testid="stHorizontalBlock"] { align-items: center !important; gap: 8px !important; }
+/* ===== Column alignment — prevent auto-stack on narrow screens ===== */
+[data-testid="stHorizontalBlock"] {
+    align-items: center !important; gap: 8px !important;
+    flex-direction: row !important; flex-wrap: nowrap !important;
+}
+[data-testid="stHorizontalBlock"] > div {
+    flex-shrink: 1 !important; min-width: 0 !important;
+}
 
 /* ===== Yao grid ===== */
 .yao-cell-label { font-size: 12px !important; color: var(--cinnabar) !important;
