@@ -12,26 +12,29 @@ LS_KEY = "liuyao_ai_settings"
 
 
 def _ls_init():
+    if "ai_settings" in st.session_state:
+        return
     query = st.query_params
     ls_payload = query.get("_ls")
-    if ls_payload is not None:
-        if ls_payload:
-            try:
-                st.session_state.ai_settings = json.loads(ls_payload)
-            except (json.JSONDecodeError, TypeError):
-                pass
+    if ls_payload is not None and ls_payload:
+        try:
+            st.session_state.ai_settings = json.loads(ls_payload)
+        except (json.JSONDecodeError, TypeError):
+            pass
         st.query_params.clear()
         return
-    if "ai_settings" not in st.session_state:
-        components.html(f"""
-        <script>
-        const d = localStorage.getItem('{LS_KEY}');
+    components.html(f"""
+    <script>
+    const d = localStorage.getItem('{LS_KEY}');
+    if (d) {{
         const u = new URL(window.location);
-        u.searchParams.set('_ls', d || '');
+        u.searchParams.set('_ls', d);
         window.location.replace(u.toString());
-        </script>
-        """, height=0)
-        st.stop()
+    }}
+    </script>
+    """, height=0)
+    if ls_payload is not None:
+        st.query_params.clear()
 
 
 def _ls_save(settings_dict):
