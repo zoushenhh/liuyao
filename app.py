@@ -227,10 +227,11 @@ hr {
 [data-testid="stHorizontalBlock"] { align-items: center !important; gap: 8px !important; }
 
 /* ===== Yao grid ===== */
-.yao-cell label { font-size: 12px !important; color: var(--cinnabar) !important;
-                  font-family: 'SimSun', '宋体', serif !important; font-weight: bold !important; }
+.yao-cell-label { font-size: 12px !important; color: var(--cinnabar) !important;
+                  font-family: 'SimSun', '宋体', serif !important; font-weight: bold !important;
+                  margin: 0 0 2px 0 !important; }
 
-/* ===== Desktop max-width ===== */
+/* ===== Desktop max-width (matches React lg/xl breakpoints) ===== */
 @media (min-width: 1024px) {
     .main .block-container {
         max-width: 720px; margin: 0 auto;
@@ -238,21 +239,55 @@ hr {
         border-right: 1px solid var(--gold);
         min-height: 100vh;
     }
+    [data-testid="stHorizontalBlock"] { gap: 12px !important; }
 }
-
 @media (min-width: 1280px) {
     .main .block-container { max-width: 900px; }
 }
 
-/* ===== Phone ===== */
+/* ===== Mobile portrait (≤640px) ===== */
 @media (max-width: 640px) {
+    .main .block-container { padding: 6px !important; }
+
+    /* Allow columns to wrap, icon columns get minimum width */
+    [data-testid="stHorizontalBlock"] {
+        flex-wrap: wrap !important;
+    }
+    [data-testid="stHorizontalBlock"] > div {
+        min-width: fit-content !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Tabs: horizontal scroll, compact */
     .stTabs [data-baseweb="tab"] {
-        padding: 10px 2px; font-size: 12px;
+        padding: 10px 2px !important; font-size: 12px !important;
+        flex: 0 0 auto !important; min-width: fit-content !important;
     }
     .stTabs [data-baseweb="tab-list"] {
-        overflow-x: auto; flex-wrap: nowrap;
+        overflow-x: auto !important; flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
     }
+
+    /* Nested tabs: smaller */
+    .stTabs .stTabs [data-baseweb="tab"] {
+        padding: 8px 4px !important; font-size: 11px !important;
+        min-height: 36px !important;
+    }
+
+    /* Code: smaller font */
     .stCode code, .stCode pre { font-size: 11px !important; }
+
+    /* Buttons: full-width */
+    .stButton > button { padding: 8px 12px !important; }
+
+    /* Info text: allow wrapping */
+    .stCaption { white-space: normal !important; }
+
+    /* Expander: compact */
+    [data-testid="stExpander"] details summary { padding: 8px !important; }
+
+    /* Selectbox in yao grid: compact */
+    .stSelectbox [data-baseweb="select"] { min-height: 40px !important; }
 }
 </style>
 """
@@ -316,18 +351,17 @@ def render_home_page():
     pp_date = now.date()
     pp_time = st.session_state.pp_time
 
-    # ---- Header bar ----
-    hc1, hc2, hc3, hc4 = st.columns([1.2, 0.8, 0.1, 0.1])
+    # ---- Header bar: date | time | ? | gear ----
+    hc1, hc2, hc3, hc4 = st.columns([2, 1.2, 0.5, 0.5])
     with hc1:
         pp_date = st.date_input("排盘日期", pp_date, label_visibility="collapsed")
     with hc2:
         pp_time = st.time_input("排盘时间", value=pp_time, label_visibility="collapsed")
         st.session_state.pp_time = pp_time
     with hc3:
-        with st.container(key="help_wrapper"):
-            help_clicked = st.button("?", key="help_btn")
-            if help_clicked:
-                st.session_state.show_help = not st.session_state.get("show_help", False)
+        help_clicked = st.button("?", key="help_btn")
+        if help_clicked:
+            st.session_state.show_help = not st.session_state.get("show_help", False)
     with hc4:
         if st.button("⚙", key="cfg_home"):
             st.session_state.previous_page = "home"
@@ -340,7 +374,7 @@ def render_home_page():
         with st.expander("如何摇卦？", expanded=True):
             st.markdown(HELP_TEXT)
 
-    # ---- Yao grid ----
+    # ---- Yao grid (matching React YaoSelector: grid-cols-3 gap-2) ----
     st.markdown("### 设定爻位")
     st.caption("从第一次（初爻）开始，依次向上填写到第六次（上爻）")
 
@@ -350,15 +384,11 @@ def render_home_page():
         for col_i in range(3):
             idx = row * 3 + col_i
             with cols[col_i]:
-                st.markdown(f'<p class="yao-cell-label" style="font-size:12px;color:#9E2A2B;'
-                           f'font-weight:bold;margin:0 0 2px 0;">{YAO_LABELS[idx]}</p>',
-                           unsafe_allow_html=True)
                 choice = st.selectbox(
                     YAO_LABELS[idx],
                     options=list(YAO_OPTIONS.keys()),
                     key=f"yao_{idx}",
-                    label_visibility="collapsed",
-                    format_func=lambda name: f"{YAO_OPTIONS[name]['symbol']} {name}",
+                    format_func=lambda name: f"{YAO_OPTIONS[name]['symbol']}  {name}",
                 )
                 yao_code += YAO_OPTIONS[choice]["code"]
 
@@ -464,7 +494,7 @@ def render_result_page():
         return
 
     # ---- Header: back | info | recast | gear ----
-    hc1, hc2, hc3, hc4 = st.columns([0.1, 2.5, 0.8, 0.12])
+    hc1, hc2, hc3, hc4 = st.columns([0.2, 3, 1.5, 0.35])
     with hc1:
         if st.button("‹", key="back_home", help="返回首页"):
             reset_cast()
