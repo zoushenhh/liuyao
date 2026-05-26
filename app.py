@@ -598,12 +598,12 @@ def render_ai_settings_page():
     with st.expander("提示词设置"):
         new_system_prompt = st.text_area(
             "系统提示词", value=current_settings.get("system_prompt", ""),
-            height=180,
+            height=180, key="sys_prompt_v2",
         )
         new_user_prompt = st.text_area(
             "用户提示词模板",
             value=current_settings.get("user_prompt_template", ""),
-            height=240,
+            height=240, key="user_prompt_v2",
             help="使用 {question} 和 {pan_result} 作为占位符",
         )
 
@@ -617,8 +617,8 @@ def render_ai_settings_page():
             )
         with ac2:
             new_timeout = st.number_input(
-                "超时(秒)", value=float(current_settings.get("timeout", 60.0)),
-                min_value=1.0, max_value=300.0,
+                "超时(秒)", value=float(current_settings.get("timeout", 360.0)),
+                min_value=1.0, max_value=600.0,
             )
         with ac3:
             new_max_retries = st.number_input(
