@@ -411,75 +411,51 @@ def render_home_page():
             "pan_result": str(pan_result),
         }
         st.session_state.ai_reading = ""
+        st.session_state.ai_requested = True
+        st.session_state.ai_error = ""
         st.session_state.page = "result"
         st.rerun()
 
 
 # ================================================================
-#  AI Tab  —— 对照 React AITab.tsx
-# ================================================================
-def render_ai_tab(pan_result: str):
-    if st.session_state.get("ai_reading"):
-        # Result mode — card display (no input), adaptive height
-        with st.container(height=450):
-            st.markdown(st.session_state.ai_reading)
-        cc1, cc2 = st.columns(2)
-        with cc1:
-            if st.button("复制结果", key="copy_result", use_container_width=True):
-                st.code(st.session_state.ai_reading, language="text")
-        with cc2:
-            st.download_button(
-                label="下载解读",
-                data=st.session_state.ai_reading,
-                file_name=f"周易解读_{pdlm.now(tz='Asia/Shanghai').format('YYYY-MM-DD_HH-mm-ss')}.txt",
-                mime="text/plain",
-                use_container_width=True,
-            )
-        return
-
-    # Input mode
-    question = st.session_state.get("cast_data", {}).get("question", "")
-    question_input = st.text_area(
-        "调整问题描述，以获得更精准的解读",
-        value=question,
-        key="result_question",
-        height=48,
-    )
-
-    gen_btn = st.button("生成 AI 解读", type="primary", use_container_width=True)
-
-    if gen_btn:
-        settings = st.session_state.get("ai_settings", {})
-        if not settings.get("api_key", "").strip():
-            st.error("请先配置 API Key（点击右上角齿轮图标）")
-            return
-        if not question_input.strip():
-            st.warning("请输入所问之事")
-            return
-        with st.spinner("AI 正在解读中..."):
-            try:
-                st.session_state.ai_reading = st.session_state.ai_module.call_llm_api(
-                    question=question_input.strip(),
-                    pan_result=pan_result,
-                    settings=settings,
-                )
-                st.rerun()
-            except ValueError as ve:
-                st.error(f"{ve}")
-            except Exception as e:
-                st.error(f"AI解读失败: {e}")
-    elif not st.session_state.get("ai_reading"):
-        st.info("输入问题后点击上方按钮生成 AI 解读")
-
-
-# ================================================================
-#  Result page  —— 对照 React ResultPage.tsx
+#  Result page  —— 自动调用 AI + 标签页
 # ================================================================
 def render_result_page():
     cast_data = st.session_state.get("cast_data")
     if not cast_data:
         reset_cast()
         return
+
+    settings = st.session_state.get("ai_settings", {})
+    has_key = bool(settings.get("api_key", "").strip())
+    question = cast_data.get("question", "").strip()
+    ai_ready = bool(st.session_state.get("ai_reading"))
+    ai_error = st.session_state.get("ai_error", "")
+    ai_waiting = (
+        st.session_state.get("ai_requested")
+        and not ai_ready
+        and not ai_error
+        and has_key
+        and question
+    )
+
+    # ---- Auto AI call (before tabs render) ----
+    if ai_waiting:
+        st.session_state.ai_requested = False
+        with st.spinner("AI 正在解读中，请稍候..."):
+            try:
+                st.session_state.ai_reading = (
+                    st.session_state.ai_module.call_llm_api(
+                        question=question,
+                        pan_result=cast_data["pan_result"],
+                        settings=settings,
+                    )
+                )
+            except ValueError as ve:
+                st.session_state.ai_error = str(ve)
+            except Exception as e:
+                st.session_state.ai_error = f"AI解读失败: {e}"
+        st.rerun()
 
     # ---- Header: back | info | recast | gear ----
     hc1, hc2, hc3, hc4 = st.columns([0.2, 3, 1.5, 0.35])
@@ -504,15 +480,45 @@ def render_result_page():
             st.session_state.page = "ai_settings"
             st.rerun()
 
+    # ---- Disable 解读 tab when no content ----
+    if not ai_ready:
+        st.markdown(
+            '<style>'
+            '.stTabs > div > [role="tablist"] > [role="tab"]:nth-child(2) '
+            '{pointer-events:none !important;opacity:0.45 !important;cursor:not-allowed !important;}'
+            '</style>',
+            unsafe_allow_html=True,
+        )
+
     # ---- 3 Tabs ----
-    pan_tab, ai_tab, doc_tab = st.tabs(["卦象", "AI 解读", "文档"])
+    pan_tab, ai_tab, doc_tab = st.tabs(["卦象", "解读", "文档"])
 
     with pan_tab:
         with st.container(height=450):
             st.code(cast_data["pan_result"])
 
     with ai_tab:
-        render_ai_tab(cast_data["pan_result"])
+        if ai_ready:
+            with st.container(height=450):
+                st.markdown(st.session_state.ai_reading)
+            cc1, cc2 = st.columns(2)
+            with cc1:
+                if st.button("复制结果", key="copy_result", use_container_width=True):
+                    st.code(st.session_state.ai_reading, language="text")
+            with cc2:
+                st.download_button(
+                    label="下载解读",
+                    data=st.session_state.ai_reading,
+                    file_name=f"周易解读_{pdlm.now(tz='Asia/Shanghai').format('YYYY-MM-DD_HH-mm-ss')}.txt",
+                    mime="text/plain",
+                    use_container_width=True,
+                )
+        elif ai_error:
+            st.error(ai_error)
+        elif not has_key:
+            st.info("请先配置 API Key 以使用解读功能（点击右上角齿轮图标）")
+        else:
+            st.info("解读内容生成中，请稍候...")
 
     with doc_tab:
         sub1, sub2, sub3 = st.tabs(["占诀", "古占例", "日志"])
